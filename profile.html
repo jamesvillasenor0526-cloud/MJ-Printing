@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Account - MJ Print Advertisement</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/store.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            DEFAULT: '#319F43', // MJ Green
+                            hover: '#288A3A',
+                            light: '#EAF7EC',
+                            red: '#ED1C24'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        [x-cloak] {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen" x-data="profileApp()">
+
+    <!-- Reuse standard navbar logic, but simpler for this page since we are logged in -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 sm:h-20">
+                <a href="index.html" class="flex items-center">
+                    <span class="text-3xl font-extrabold text-brand tracking-tighter">MJ</span>
+                    <span class="text-2xl font-bold text-black italic ml-1">PRINT</span>
+                </a>
+                <div class="flex items-center space-x-6">
+                    <a href="index.html" class="text-gray-500 hover:text-brand font-medium hidden md:block">Home</a>
+                    <button @click="logout" class="text-sm font-medium text-red-600 hover:text-red-800">Sign
+                        Out</button>
+                    <div class="h-8 w-8 rounded-full bg-brand text-white flex items-center justify-center font-bold"
+                        x-text="user.name ? user.name.charAt(0) : 'U'"></div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-1 w-full">
+
+        <div class="md:flex md:space-x-8">
+            <!-- Sidebar -->
+            <div class="w-full md:w-64 mb-8 md:mb-0">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex flex-col items-center">
+                        <div class="h-20 w-20 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-2xl font-bold mb-4"
+                            x-text="user.name ? user.name.charAt(0) : 'U'"></div>
+                        <h2 class="text-xl font-bold text-gray-900" x-text="user.name">User Name</h2>
+                        <p class="text-sm text-gray-500" x-text="user.email">user@example.com</p>
+                    </div>
+                    <hr class="my-6 border-gray-100">
+                    <nav class="space-y-2">
+                        <a href="#" class="block px-4 py-2 bg-brand-light text-brand font-bold rounded-md">Order
+                            History</a>
+                        <a href="#" class="block px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-md">Account
+                            Settings</a>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="flex-1">
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100">
+                        <h3 class="text-lg font-bold text-gray-900">Your Orders</h3>
+                    </div>
+
+                    <div x-show="myOrders.length === 0" class="p-8 text-center" x-cloak>
+                        <svg class="mx-auto h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900">No orders yet</h3>
+                        <p class="mt-1 text-sm text-gray-500">Start by creating a new design quote.</p>
+                        <div class="mt-6">
+                            <a href="index.html"
+                                class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand hover:bg-brand-hover focus:outline-none">
+                                Browse Products
+                            </a>
+                        </div>
+                    </div>
+
+                    <ul x-show="myOrders.length > 0" class="divide-y divide-gray-100" x-cloak>
+                        <template x-for="order in myOrders" :key="order.id">
+                            <li class="p-6 hover:bg-gray-50">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <p class="text-sm font-bold text-brand" x-text="'Order #' + order.id"></p>
+                                            <p class="text-sm text-gray-500" x-text="formatDate(order.date)"></p>
+                                        </div>
+                                        <div class="mt-2 sm:flex sm:justify-between">
+                                            <div class="sm:flex">
+                                                <p class="flex items-center text-sm text-gray-500">
+                                                    <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400"
+                                                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                                        fill="currentColor">
+                                                        <path fill-rule="evenodd"
+                                                            d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 001-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z"
+                                                            clip-rule="evenodd" />
+                                                    </svg>
+                                                    <span x-text="order.items.map(i => i.name).join(', ')"></span>
+                                                </p>
+                                            </div>
+                                            <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                                                <span
+                                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                                                    :class="{
+                                                        'bg-yellow-100 text-yellow-800': order.status === 'Pending',
+                                                        'bg-blue-100 text-blue-800': order.status === 'Processing',
+                                                        'bg-green-100 text-green-800': order.status === 'Ready',
+                                                        'bg-gray-100 text-gray-800': order.status === 'Completed'
+                                                    }" x-text="order.status">
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="ml-5 flex-shrink-0">
+                                        <a :href="'track.html?ref=' + order.id"
+                                            class="font-medium text-brand hover:text-brand-hover">Track
+                                            &rarr;</a>
+                                    </div>
+                                </div>
+                            </li>
+                        </template>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function profileApp() {
+            return {
+                user: {},
+                myOrders: [],
+
+                init() {
+                    const session = localStorage.getItem('mj_session');
+                    if (!session) {
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    this.user = JSON.parse(session);
+
+                    // Load orders from global order store and filter by this user's email
+                    // Note: This matches the 'admin/dashboard.html' logic which saves to 'mj_orders'
+                    const allOrders = JSON.parse(localStorage.getItem('mj_orders') || '[]');
+                    this.myOrders = allOrders.filter(o => o.email === this.user.email);
+                },
+
+                logout() {
+                    localStorage.removeItem('mj_session');
+                    window.location.href = 'index.html';
+                },
+
+                formatDate(isoString) {
+                    if (!isoString) return '';
+                    return new Date(isoString).toLocaleDateString('en-US', {
+                        month: 'short', day: 'numeric', year: 'numeric'
+                    });
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frequently Asked Questions - MJ Print Advertisement</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/store.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            DEFAULT: '#319F43', // MJ Green
+                            hover: '#288A3A',
+                            light: '#EAF7EC',
+                            red: '#ED1C24'      // MJ Red
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        [x-cloak] {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
+
+    <!-- Navbar -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50" x-data="{ open: false }">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 sm:h-20">
+                <a href="index.html" class="flex items-center group">
+                    <div class="flex flex-col justify-center leading-none">
+                        <div class="flex items-baseline">
+                            <span
+                                class="text-3xl font-extrabold text-brand tracking-tighter group-hover:scale-105 transition-transform">MJ</span>
+                            <span class="text-2xl font-bold text-black italic ml-1">PRINT</span>
+                        </div>
+                    </div>
+                </a>
+
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="index.html" class="text-gray-500 hover:text-brand font-medium">Home</a>
+                    <a href="portfolio.html" class="text-gray-500 hover:text-brand font-medium">Portfolio</a>
+                    <a href="reviews.html" class="text-gray-500 hover:text-brand font-medium">Reviews</a>
+
+                    <!-- Dynamic Auth Link -->
+                    <template x-if="$store.auth.isLoggedIn">
+                        <a href="profile.html" class="text-gray-500 hover:text-brand font-medium"
+                            x-text="'My Account (' + $store.auth.user.name.split(' ')[0] + ')'">My Account</a>
+                    </template>
+
+                    <a href="about.html" class="text-gray-500 hover:text-brand font-medium">About Us</a>
+                    <a href="cart.html" class="relative group">
+                        <svg class="w-7 h-7 text-gray-400 group-hover:text-brand transition-colors" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z">
+                            </path>
+                        </svg>
+                        <span x-text="$store.cart.count"
+                            class="absolute -top-2 -right-2 bg-brand-red text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">0</span>
+                    </a>
+
+                    <!-- Login/Register (Only if not logged in) -->
+                    <template x-if="!$store.auth.isLoggedIn">
+                        <a href="login.html"
+                            class="text-xs font-semibold text-brand border border-brand px-3 py-1 rounded-full hover:bg-brand hover:text-white transition-colors">Sign
+                            In</a>
+                    </template>
+                </div>
+
+                <div class="flex items-center md:hidden">
+                    <button @click="open = !open" class="text-gray-500 hover:text-gray-900 p-2">
+                        <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div x-show="open" class="md:hidden bg-white border-t border-gray-100 shadow-xl" x-transition>
+            <div class="px-4 pt-2 pb-4 space-y-2">
+                <a href="index.html"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 rounded-lg">Home</a>
+                <a href="portfolio.html"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Portfolio</a>
+                <a href="reviews.html"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Reviews</a>
+                <a href="track.html"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Track
+                    Order</a>
+                <a href="about.html"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">About
+                    Us</a>
+                <a href="cart.html"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Cart
+                    (<span x-text="$store.cart.count">0</span>)</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <div class="bg-brand text-white">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-3xl font-extrabold sm:text-4xl">Frequently Asked Questions</h1>
+            <p class="mt-4 text-xl text-brand-light">Everything you need to know about our services.</p>
+        </div>
+    </div>
+
+    <!-- FAQ Section (Split Layout) -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16" x-data="{ active: 1 }">
+
+        <div class="lg:grid lg:grid-cols-12 lg:gap-8">
+
+            <!-- Sidebar (Questions List) -->
+            <div class="lg:col-span-4 space-y-8">
+
+                <!-- Category: General -->
+                <div>
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">General</h3>
+                    <div class="space-y-2">
+                        <button @click="active = 1"
+                            :class="active === 1 ? 'bg-brand text-white shadow-md' : 'bg-white text-gray-700 hover:bg-gray-50 hover:text-brand'"
+                            class="w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 border border-transparent flex justify-between items-center group">
+                            <span>Operating Hours</span>
+                            <svg x-show="active === 1" class="w-4 h-4 text-brand-light" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                        <button @click="active = 2"
+                            :class="active === 2 ? 'bg-brand text-white shadow-md' : 'bg-white text-gray-700 hover:bg-gray-50 hover:text-brand'"
+                            class="w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 border border-transparent flex justify-between items-center group">
+                            <span>Rush Printing</span>
+                            <svg x-show="active === 2" class="w-4 h-4 text-brand-light" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Category: Printing -->
+                <div>
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Printing & Design</h3>
+                    <div class="space-y-2">
+                        <button @click="active = 3"
+                            :class="active === 3 ? 'bg-brand text-white shadow-md' : 'bg-white text-gray-700 hover:bg-gray-50 hover:text-brand'"
+                            class="w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 border border-transparent flex justify-between items-center group">
+                            <span>File Formats</span>
+                            <svg x-show="active === 3" class="w-4 h-4 text-brand-light" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                        <button @click="active = 4"
+                            :class="active === 4 ? 'bg-brand text-white shadow-md' : 'bg-white text-gray-700 hover:bg-gray-50 hover:text-brand'"
+                            class="w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 border border-transparent flex justify-between items-center group">
+                            <span>Graphic Design Services</span>
+                            <svg x-show="active === 4" class="w-4 h-4 text-brand-light" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Category: Payment -->
+                <div>
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Billing & Shipping
+                    </h3>
+                    <div class="space-y-2">
+                        <button @click="active = 5"
+                            :class="active === 5 ? 'bg-brand text-white shadow-md' : 'bg-white text-gray-700 hover:bg-gray-50 hover:text-brand'"
+                            class="w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 border border-transparent flex justify-between items-center group">
+                            <span>Payment Methods</span>
+                            <svg x-show="active === 5" class="w-4 h-4 text-brand-light" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                        <button @click="active = 6"
+                            :class="active === 6 ? 'bg-brand text-white shadow-md' : 'bg-white text-gray-700 hover:bg-gray-50 hover:text-brand'"
+                            class="w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 border border-transparent flex justify-between items-center group">
+                            <span>Delivery Options</span>
+                            <svg x-show="active === 6" class="w-4 h-4 text-brand-light" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Content Area (Answers) -->
+            <div class="mt-8 lg:mt-0 lg:col-span-8">
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 sm:p-12 min-h-[400px]">
+
+                    <!-- Answer 1 -->
+                    <div x-show="active === 1" x-transition:enter="transition ease-out duration-300"
+                        x-transition:enter-start="opacity-0 translate-y-2"
+                        x-transition:enter-end="opacity-100 translate-y-0">
+                        <div class="flex items-center mb-6">
+                            <div class="p-3 rounded-full bg-brand-light text-brand mr-4">
+                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-900">What are your operating hours?</h2>
+                        </div>
+                        <div class="prose text-gray-500">
+                            <p class="text-lg leading-relaxed">We are open <strong>Monday to Friday from 8:00 AM to 6:00
+                                    PM</strong>. On Saturdays, we operate on a shortened schedule from 9:00 AM to 5:00
+                                PM to accommodate weekend rush orders.</p>
+                            <p class="mt-4">Please note that we are <strong>closed on Sundays and Public
+                                    Holidays</strong>. If you send a file during off-hours, our team will review it
+                                immediately on the next business day.</p>
+                        </div>
+                    </div>
+
+                    <!-- Answer 2 -->
+                    <div x-show="active === 2" x-transition:enter="transition ease-out duration-300"
+                        x-transition:enter-start="opacity-0 translate-y-2"
+                        x-transition:enter-end="opacity-100 translate-y-0" style="display: none;">
+                        <div class="flex items-center mb-6">
+                            <div class="p-3 rounded-full bg-red-50 text-brand mr-4">
+                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-900">Do you offer rush printing?</h2>
+                        </div>
+                        <div class="prose text-gray-500">
+                            <p class="text-lg leading-relaxed"><strong>Yes, we accept rush orders!</strong> We
+                                understand that deadlines can be tight.</p>
+                            <ul class="list-disc pl-5 mt-4 space-y-2">
+                                <li><strong>Small Docs:</strong> Can be done within 1-2 hours.</li>
+                                <li><strong>Tarpaulins:</strong> Same-day printing available if ordered before 12:00 PM.
+                                </li>
+                                <li><strong>Merchandise:</strong> Rush fees apply for 24-hour turnaround.</li>
+                            </ul>
+                            <p class="mt-4 text-sm text-gray-400 italic">*Rush fees vary depending on current workload
+                                and job complexity.</p>
+                        </div>
+                    </div>
+
+                    <!-- Answer 3 -->
+                    <div x-show="active === 3" x-transition:enter="transition ease-out duration-300"
+                        x-transition:enter-start="opacity-0 translate-y-2"
+                        x-transition:enter-end="opacity-100 translate-y-0" style="display: none;">
+                        <div class="flex items-center mb-6">
+                            <div class="p-3 rounded-full bg-blue-50 text-blue-600 mr-4">
+                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-900">What file formats do you accept?</h2>
+                        </div>
+                        <div class="prose text-gray-500">
+                            <p class="text-lg leading-relaxed">For the best possible print quality, we recommend the
+                                following formats:</p>
+                            <ul class="list-disc pl-5 mt-4 space-y-2">
+                                <li><strong>Documents:</strong> PDF (Portable Document Format) is best to preserve fonts
+                                    and formatting.</li>
+                                <li><strong>Images/Photos:</strong> High-resolution JPG or PNG (300 DPI minimum).</li>
+                                <li><strong>Vector Art:</strong> AI, EPS, or SVG (Convert text to outlines).</li>
+                                <li><strong>Layouts:</strong> PSD (Photoshop) or TIFF.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Answer 4 -->
+                    <div x-show="active === 4" x-transition:enter="transition ease-out duration-300"
+                        x-transition:enter-start="opacity-0 translate-y-2"
+                        x-transition:enter-end="opacity-100 translate-y-0" style="display: none;">
+                        <div class="flex items-center mb-6">
+                            <div class="p-3 rounded-full bg-purple-50 text-purple-600 mr-4">
+                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-900">Can you design the layout for me?</h2>
+                        </div>
+                        <div class="prose text-gray-500">
+                            <p class="text-lg leading-relaxed"><strong>Absolutely!</strong> We have a team of creative
+                                graphic artists ready to help.</p>
+                            <p class="mt-4"><strong>Simple Layouts:</strong> Basic text placement for Tarpaulins is
+                                typically FREE of charge.</p>
+                            <p class="mt-2"><strong>Custom Design:</strong> For logos, complex photo manipulation, or
+                                branding materials, we charge a design fee starting at <strong>₱150.00</strong>. This
+                                includes up to 2 revisions.</p>
+                        </div>
+                    </div>
+
+                    <!-- Answer 5 -->
+                    <div x-show="active === 5" x-transition:enter="transition ease-out duration-300"
+                        x-transition:enter-start="opacity-0 translate-y-2"
+                        x-transition:enter-end="opacity-100 translate-y-0" style="display: none;">
+                        <div class="flex items-center mb-6">
+                            <div class="p-3 rounded-full bg-yellow-50 text-yellow-600 mr-4">
+                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-900">Payment Methods</h2>
+                        </div>
+                        <div class="prose text-gray-500">
+                            <p class="text-lg leading-relaxed">We want to make paying as easy as possible. We accept:
+                            </p>
+                            <ul class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                                <li class="flex items-center bg-gray-50 p-4 rounded-lg"><span
+                                        class="font-bold text-gray-900">Cash</span> <span
+                                        class="ml-2 text-sm text-gray-500">(Over the counter)</span></li>
+                                <li class="flex items-center bg-gray-50 p-4 rounded-lg"><span
+                                        class="font-bold text-blue-500">GCash</span></li>
+                                <li class="flex items-center bg-gray-50 p-4 rounded-lg"><span
+                                        class="font-bold text-blue-900">BDO Transfer</span></li>
+                                <li class="flex items-center bg-gray-50 p-4 rounded-lg"><span
+                                        class="font-bold text-red-700">BPI Transfer</span></li>
+                            </ul>
+                            <p class="mt-6">For orders above ₱1,000, we prefer a <strong>50% downpayment</strong> to
+                                start production.</p>
+                        </div>
+                    </div>
+
+                    <!-- Answer 6 -->
+                    <div x-show="active === 6" x-transition:enter="transition ease-out duration-300"
+                        x-transition:enter-start="opacity-0 translate-y-2"
+                        x-transition:enter-end="opacity-100 translate-y-0" style="display: none;">
+                        <div class="flex items-center mb-6">
+                            <div class="p-3 rounded-full bg-green-50 text-green-600 mr-4">
+                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                                </svg>
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-900">Delivery Options</h2>
+                        </div>
+                        <div class="prose text-gray-500">
+                            <p class="text-lg leading-relaxed">Don't have time to pick up? We can send it to you!</p>
+                            <ul class="list-disc pl-5 mt-4 space-y-2">
+                                <li><strong>Same-day Moto Delivery:</strong> via Lalamove, Grab Express, or Angkas.
+                                    (Booked by customer or us).</li>
+                                <li><strong>Nationwide Shipping:</strong> via LBC or J&T Express for non-urgent bulk
+                                    items.</li>
+                                <li><strong>Nearby Delivery:</strong> Free within 1km radius for minimum orders of ₱500.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Contact CTA -->
+    <div class="bg-gray-100 py-12">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <h3 class="text-2xl font-bold text-gray-900 mb-4">Still have questions?</h3>
+            <p class="text-gray-600 mb-8">Can't find the answer you're looking for? Please contact our friendly support
+                team.</p>
+            <div class="flex justify-center space-x-4">
+                <a href="about.html"
+                    class="bg-brand text-white px-8 py-3 rounded-full font-bold hover:bg-brand-hover transition-colors shadow-md">Contact
+                    Us</a>
+                <a href="index.html"
+                    class="bg-white text-gray-700 px-8 py-3 rounded-full font-bold border border-gray-300 hover:bg-gray-50 transition-colors shadow-sm">Back
+                    to Home</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 border-t border-gray-800 mt-auto">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+            <div class="md:flex md:items-center md:justify-between">
+                <div class="flex justify-center md:justify-start">
+                    <span class="text-2xl font-extrabold text-white tracking-tighter">MJ</span>
+                    <span class="text-xl font-bold text-gray-400 italic ml-1">PRINT</span>
+                </div>
+                <div class="mt-8 md:mt-0 flex space-x-6 justify-center md:justify-end">
+                    <a href="faq.html" class="text-gray-400 hover:text-white transition-colors">FAQ</a>
+                    <span class="text-gray-600">|</span>
+                    <span class="text-center text-base text-gray-400">
+                        &copy; 2026 MJ Print Advertisement.
+                    </span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Live Chat Widget -->
+    <div x-data="chatWidget()" class="fixed bottom-6 right-6 z-50 flex flex-col items-end space-y-4">
+
+        <!-- Chat Window -->
+        <div x-show="isOpen" x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+            x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+            x-transition:leave-end="opacity-0 translate-y-4 scale-95"
+            class="bg-white w-80 sm:w-96 rounded-2xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col"
+            style="height: 500px; display: none;">
+
+            <!-- Header -->
+            <div class="bg-brand p-4 flex justify-between items-center text-white">
+                <div class="flex items-center space-x-2">
+                    <div class="w-2 h-2 bg-green-300 rounded-full animate-pulse"></div>
+                    <h3 class="font-bold">MJ Print Support</h3>
+                </div>
+                <button @click="isOpen = false" class="text-white hover:text-gray-200 focus:outline-none">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Messages Area -->
+            <div class="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50" id="chat-messages">
+                <!-- Initial Bot Message -->
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 bg-brand-light rounded-full p-1 mr-2">
+                        <svg class="w-4 h-4 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                        </svg>
+                    </div>
+                    <div
+                        class="bg-white text-gray-800 p-3 rounded-lg rounded-tl-none shadow-sm text-sm border border-gray-100">
+                        Hi! Welcome to MJ Print Advertisement. How can we help you today?
+                    </div>
+                </div>
+
+                <template x-for="msg in messages" :key="msg.id">
+                    <div class="flex" :class="msg.isUser ? 'justify-end' : 'justify-start'">
+                        <div class="max-w-[80%] p-3 rounded-lg text-sm shadow-sm"
+                            :class="msg.isUser ? 'bg-brand text-white rounded-tr-none' : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'">
+                            <span x-text="msg.text"></span>
+                        </div>
+                    </div>
+                </template>
+
+                <div x-show="isTyping" class="flex justify-start">
+                    <div
+                        class="bg-white text-gray-400 p-3 rounded-lg rounded-tl-none shadow-sm text-xs border border-gray-100 italic">
+                        Agent is typing...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="p-4 bg-white border-t border-gray-100">
+                <form @submit.prevent="sendMessage" class="flex space-x-2">
+                    <input type="text" x-model="newMessage" placeholder="Type a message..."
+                        class="flex-1 appearance-none border border-gray-300 rounded-full py-2 px-4 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand text-sm transition-shadow">
+                    <button type="submit"
+                        class="bg-brand text-white rounded-full p-2 hover:bg-brand-hover focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 transition-colors disabled:opacity-50"
+                        :disabled="!newMessage.trim()">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Float Button -->
+        <button @click="isOpen = !isOpen"
+            class="bg-brand text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center hover:bg-brand-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand transition-all transform hover:scale-105"
+            :class="{'rotate-90': isOpen}">
+            <svg x-show="!isOpen" class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z">
+                </path>
+            </svg>
+            <svg x-show="isOpen" class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                style="display: none;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+    </div>
+
+    <script>
+        function chatWidget() {
+            return {
+                isOpen: false,
+                newMessage: '',
+                messages: [],
+                isTyping: false,
+
+                sendMessage() {
+                    const text = this.newMessage.trim();
+                    if (!text) return;
+
+                    // Add user message via direct push (Alpine reactivity)
+                    this.messages.push({
+                        id: Date.now(),
+                        text: text,
+                        isUser: true
+                    });
+
+                    this.newMessage = '';
+                    this.scrollToBottom();
+
+                    // Simulate bot response
+                    this.isTyping = true;
+                    this.scrollToBottom();
+
+                    setTimeout(() => {
+                        this.isTyping = false;
+                        this.messages.push({
+                            id: Date.now() + 1,
+                            text: 'Thanks for reaching out! Our team is currently busy printing awesome stuff. We will get back to you as soon as possible.',
+                            isUser: false
+                        });
+                        this.scrollToBottom();
+                    }, 1500);
+                },
+
+                scrollToBottom() {
+                    this.$nextTick(() => {
+                        const container = document.getElementById('chat-messages');
+                        if (container) {
+                            container.scrollTop = container.scrollHeight;
+                        }
+                    });
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Order - MJ Print Advertisement</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/store.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            DEFAULT: '#319F43', // MJ Green
+                            hover: '#288A3A',
+                            light: '#EAF7EC',
+                            red: '#ED1C24'      // MJ Red
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
+
+    <nav class="bg-white shadow-sm sticky top-0 z-50" x-data="{ open: false }">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 sm:h-20">
+                <a href="index.html" class="flex items-center group">
+                    <div class="flex flex-col justify-center leading-none">
+                        <div class="flex items-baseline">
+                            <span
+                                class="text-3xl font-extrabold text-brand tracking-tighter group-hover:scale-105 transition-transform">MJ</span>
+                            <span class="text-2xl font-bold text-black italic ml-1">PRINT</span>
+                        </div>
+                    </div>
+                </a>
+
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="index.html" class="text-gray-500 hover:text-brand font-medium">Home</a>
+                    <a href="portfolio.html" class="text-gray-500 hover:text-brand font-medium">Portfolio</a>
+                    <a href="reviews.html" class="text-gray-500 hover:text-brand font-medium">Reviews</a>
+                    <!-- Dynamic Auth Link -->
+                    <template x-if="$store.auth.isLoggedIn">
+                        <a href="profile.html" class="text-gray-500 hover:text-brand font-medium"
+                            x-text="'My Account (' + $store.auth.user.name.split(' ')[0] + ')'">My Account</a>
+                    </template>
+
+                    <a href="about.html" class="text-gray-500 hover:text-brand font-medium">About Us</a>
+                    <a href="cart.html" class="relative group">
+                        <svg class="w-7 h-7 text-gray-400 group-hover:text-brand transition-colors" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z">
+                            </path>
+                        </svg>
+                        <span x-text="$store.cart.count"
+                            class="absolute -top-2 -right-2 bg-brand-red text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">0</span>
+                    </a>
+
+                    <!-- Login/Register (Only if not logged in) -->
+                    <template x-if="!$store.auth.isLoggedIn">
+                        <a href="login.html"
+                            class="text-xs font-semibold text-brand border border-brand px-3 py-1 rounded-full hover:bg-brand hover:text-white transition-colors">Sign
+                            In</a>
+                    </template>
+                </div>
+
+                <div class="flex items-center md:hidden">
+                    <button @click="open = !open" class="text-gray-500 hover:text-gray-900 p-2">
+                        <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div x-show="open" class="md:hidden bg-white border-t border-gray-100 shadow-xl" x-transition>
+            <div class="px-4 pt-2 pb-4 space-y-2">
+                <a href="index.html"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 rounded-lg">Home</a>
+                <a href="portfolio.html"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Portfolio</a>
+                <a href="reviews.html"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Reviews</a>
+                <a href="track.html" class="block px-4 py-3 text-base font-bold text-brand bg-green-50 rounded-lg">Track
+                    Order</a>
+                <a href="about.html"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">About
+                    Us</a>
+                <a href="cart.html"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Cart
+                    (<span x-text="$store.cart.count">0</span>)</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex-grow w-full" x-data="trackingApp()">
+
+        <div class="text-center mb-12">
+            <h1 class="text-3xl font-extrabold text-gray-900">Track Your Order</h1>
+            <p class="mt-2 text-gray-500">Enter the reference number sent to your email.</p>
+
+            <div class="mt-8 relative max-w-lg mx-auto">
+                <input type="text" x-model="referenceNumber" @keydown.enter="trackOrder()"
+                    placeholder="e.g. MJ-2024-8821"
+                    class="w-full px-5 py-4 border border-gray-300 rounded-full shadow-sm focus:ring-2 focus:ring-brand focus:border-brand outline-none text-lg text-center uppercase tracking-widest">
+                <button @click="trackOrder()"
+                    class="absolute right-2 top-2 bottom-2 bg-brand text-white px-6 rounded-full font-bold hover:bg-brand-hover transition-colors">
+                    Track
+                </button>
+            </div>
+            <p x-show="error" x-text="error" class="mt-4 text-red-600 font-medium" style="display: none;"></p>
+        </div>
+
+        <div x-show="order" class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden"
+            style="display: none;">
+
+            <div
+                class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center flex-wrap gap-2">
+                <div>
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Order Reference</span>
+                    <h2 class="text-xl font-bold text-gray-900" x-text="'#' + order.id"></h2>
+                </div>
+                <div class="px-3 py-1 rounded-full text-sm font-bold" :class="{
+                        'bg-yellow-100 text-yellow-800': order.status === 'Pending',
+                        'bg-blue-100 text-blue-800': order.status === 'In Production',
+                        'bg-purple-100 text-purple-800': order.status === 'Ready for Pickup',
+                        'bg-green-100 text-green-800': order.status === 'Completed'
+                    }" x-text="order.status">
+                </div>
+            </div>
+
+            <div class="p-6 sm:p-8">
+
+                <!-- Dynamic Stepper -->
+                <div class="relative pl-4 sm:pl-0">
+                    <div class="absolute left-2 top-0 bottom-0 w-0.5 bg-gray-200 sm:left-8"></div>
+
+                    <!-- Step 1: Placed -->
+                    <div class="relative flex items-start mb-8 sm:ml-4">
+                        <div class="absolute -left-2 h-5 w-5 rounded-full border-4 border-white shadow sm:left-4"
+                            :class="step >= 1 ? 'bg-brand' : 'bg-gray-300'"></div>
+                        <div class="ml-6 sm:ml-12">
+                            <h3 class="text-lg font-bold" :class="step >= 1 ? 'text-gray-900' : 'text-gray-400'">Order
+                                Placed</h3>
+                            <p class="text-sm text-gray-500" x-text="formatDate(order.date)"></p>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: In Production -->
+                    <div class="relative flex items-start mb-8 sm:ml-4">
+                        <div class="absolute -left-2 h-5 w-5 rounded-full border-4 border-white shadow sm:left-4"
+                            :class="step >= 2 ? 'bg-brand' : 'bg-gray-300'"></div>
+                        <div class="ml-6 sm:ml-12">
+                            <h3 class="text-lg font-bold" :class="step >= 2 ? 'text-gray-900' : 'text-gray-400'">In
+                                Production</h3>
+                            <p class="text-sm text-gray-500" x-show="step < 2">Pending</p>
+                            <p class="text-sm text-brand font-medium" x-show="step === 2">Your order is being processed.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Ready/Out -->
+                    <div class="relative flex items-start mb-8 sm:ml-4">
+                        <div class="absolute -left-2 h-5 w-5 rounded-full border-4 border-white shadow sm:left-4"
+                            :class="step >= 3 ? 'bg-brand' : 'bg-gray-300'"></div>
+                        <div class="ml-6 sm:ml-12">
+                            <h3 class="text-lg font-bold" :class="step >= 3 ? 'text-gray-900' : 'text-gray-400'">Ready
+                                for
+                                Pickup / Out for Delivery</h3>
+                            <p class="text-sm text-gray-500" x-show="step < 3">Pending</p>
+                            <p class="text-sm text-brand font-medium"
+                                x-show="step === 3 && order.status === 'Ready for Pickup'">Ready for Pickup at Store</p>
+                            <p class="text-sm text-brand font-medium"
+                                x-show="step === 3 && order.status === 'Out for Delivery'">Rider is on the way!</p>
+
+                            <template x-if="step === 3 && order.proof">
+                                <div class="mt-4 mb-4">
+                                    <p class="text-xs font-bold text-gray-700 mb-2">Proof of Delivery:</p>
+                                    <img :src="order.proof"
+                                        class="w-full max-w-xs rounded-lg shadow-md border border-gray-200">
+                                </div>
+                            </template>
+
+                            <button x-show="step === 3" @click="confirmReceived"
+                                class="mt-4 px-4 py-2 bg-brand text-white text-sm font-bold rounded-lg shadow hover:bg-brand-hover transition-colors">
+                                I have received my order
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Completed -->
+                    <div class="relative flex items-start sm:ml-4">
+                        <div class="absolute -left-2 h-5 w-5 rounded-full border-4 border-white shadow sm:left-4"
+                            :class="step >= 4 ? 'bg-brand' : 'bg-gray-300'"></div>
+                        <div class="ml-6 sm:ml-12">
+                            <h3 class="text-lg font-bold" :class="step >= 4 ? 'text-gray-900' : 'text-gray-400'">
+                                Completed</h3>
+                            <p class="text-sm text-gray-500" x-show="step < 4">Pending</p>
+                            <p class="text-sm text-green-600 font-medium" x-show="step >= 4">Order Fulfilled</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-12 border-t border-gray-100 pt-8">
+                    <h4 class="font-bold text-gray-900 mb-4">Order Items</h4>
+                    <div class="space-y-4">
+                        <template x-for="item in order.items" :key="item.id">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div
+                                        class="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-500 text-xs text-center p-1">
+                                        <span x-text="item.name.substring(0, 10) + '...'"></span>
+                                    </div>
+                                    <div class="ml-4">
+                                        <p class="text-sm font-bold text-gray-900" x-text="item.name"></p>
+                                        <p class="text-xs text-brand" x-text="item.file ? 'File: ' + item.file : ''">
+                                        </p>
+                                    </div>
+                                </div>
+                                <span class="text-sm font-medium text-gray-600" x-text="'x' + item.quantity"></span>
+                            </div>
+                        </template>
+                    </div>
+                    <div class="mt-6 flex justify-between items-center pt-6 border-t border-gray-100">
+                        <span class="font-bold text-gray-900">Total Amount</span>
+                        <span class="text-xl font-extrabold text-brand"
+                            x-text="'₱' + (order.total || 0).toLocaleString()"></span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="text-center mt-8">
+            <p class="text-sm text-gray-400">Having trouble? <a href="#" @click="$dispatch('toggle-chat')"
+                    class="text-brand hover:underline">Contact
+                    Support</a></p>
+        </div>
+
+    </div>
+
+    <script>
+        function trackingApp() {
+            return {
+                referenceNumber: '',
+                order: null,
+                error: '',
+
+                get step() {
+                    if (!this.order) return 0;
+                    const s = this.order.status;
+                    if (s === 'Pending') return 1;
+                    if (s === 'In Production' || s === 'Processing') return 2;
+                    if (s === 'Ready for Pickup' || s === 'Out for Delivery') return 3;
+                    if (s === 'Completed') return 4;
+                    return 0;
+                },
+
+                init() {
+                    const params = new URLSearchParams(window.location.search);
+                    const ref = params.get('ref');
+                    if (ref) {
+                        this.referenceNumber = ref;
+                        this.trackOrder();
+                    }
+                },
+
+                trackOrder() {
+                    this.error = '';
+                    this.order = null;
+                    const ref = this.referenceNumber.trim().toUpperCase();
+
+                    if (!ref) {
+                        this.error = 'Please enter a reference number.';
+                        return;
+                    }
+
+                    const orders = JSON.parse(localStorage.getItem('mj_orders') || '[]');
+                    const found = orders.find(o => o.id === ref || o.id === '#' + ref);
+
+                    if (found) {
+                        this.order = found;
+                    } else {
+                        this.error = 'Order not found. Please check your reference number.';
+                    }
+                },
+
+                confirmReceived() {
+                    if (!this.order) return;
+                    if (!confirm("Are you sure you have received this order?")) return;
+
+                    // Update local state
+                    this.order.status = 'Completed';
+
+                    // Update Storage
+                    const orders = JSON.parse(localStorage.getItem('mj_orders') || '[]');
+                    const index = orders.findIndex(o => o.id === this.order.id);
+                    if (index !== -1) {
+                        orders[index].status = 'Completed';
+                        localStorage.setItem('mj_orders', JSON.stringify(orders));
+                    }
+                },
+
+                formatDate(dateString) {
+                    if (!dateString) return '';
+                    const d = new Date(dateString);
+                    return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                }
+            }
+        }
+    </script>
+
+    <script>
+        const btn = document.getElementById('mobile-menu-btn');
+        const menu = document.getElementById('mobile-menu');
+
+        btn.addEventListener('click', () => {
+            menu.classList.toggle('hidden');
+        });
+    </script>
+    <!-- Footer -->
+    <footer class="bg-gray-900 border-t border-gray-800 mt-auto">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+            <div class="md:flex md:items-center md:justify-between">
+                <div class="flex justify-center md:justify-start">
+                    <span class="text-2xl font-extrabold text-white tracking-tighter">MJ</span>
+                    <span class="text-xl font-bold text-gray-400 italic ml-1">PRINT</span>
+                </div>
+                <div class="mt-8 md:mt-0 flex space-x-6 justify-center md:justify-end">
+                    <a href="file-guide.html" class="text-gray-400 hover:text-white transition-colors">File Guide</a>
+                    <span class="text-gray-600">|</span>
+                    <a href="faq.html" class="text-gray-400 hover:text-white transition-colors">FAQ</a>
+                    <span class="text-gray-600">|</span>
+                    <span class="text-center text-base text-gray-400">
+                        &copy; 2026 MJ Print Advertisement. All rights reserved.
+                    </span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Live Chat Widget -->
+    <div x-data="chatWidget()" class="fixed bottom-6 right-6 z-50 flex flex-col items-end space-y-4">
+
+        <!-- Chat Window -->
+        <div x-show="isOpen" x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+            x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+            x-transition:leave-end="opacity-0 translate-y-4 scale-95"
+            class="bg-white w-80 sm:w-96 rounded-2xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col"
+            style="height: 500px; display: none;">
+
+            <!-- Header -->
+            <div class="bg-brand p-4 flex justify-between items-center text-white">
+                <div class="flex items-center space-x-2">
+                    <div class="w-2 h-2 bg-green-300 rounded-full animate-pulse"></div>
+                    <h3 class="font-bold">MJ Print Support</h3>
+                </div>
+                <button @click="isOpen = false" class="text-white hover:text-gray-200 focus:outline-none">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Messages Area -->
+            <div class="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50" id="chat-messages">
+                <!-- Initial Bot Message -->
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 bg-brand-light rounded-full p-1 mr-2">
+                        <svg class="w-4 h-4 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                        </svg>
+                    </div>
+                    <div
+                        class="bg-white text-gray-800 p-3 rounded-lg rounded-tl-none shadow-sm text-sm border border-gray-100">
+                        Hi! Welcome to MJ Print Advertisement. How can we help you today?
+                    </div>
+                </div>
+
+                <template x-for="(msg, index) in messages" :key="msg.id">
+                    <div>
+                        <!-- Date separator -->
+                        <template
+                            x-if="index === 0 || new Date(msg.timestamp || msg.id).toDateString() !== new Date(messages[index - 1].timestamp || messages[index - 1].id).toDateString()">
+                            <div class="flex justify-center my-3">
+                                <span class="text-xs text-gray-500 bg-gray-200 px-3 py-1 rounded-full"
+                                    x-text="new Date(msg.timestamp || msg.id).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })">
+                                </span>
+                            </div>
+                        </template>
+
+                        <!-- Message bubble -->
+                        <div class="flex" :class="msg.isUser ? 'justify-end' : 'justify-start'">
+                            <div class="max-w-[80%] p-3 rounded-lg text-sm shadow-sm"
+                                :class="msg.isUser ? 'bg-brand text-white rounded-tr-none' : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'">
+                                <span x-text="msg.text"></span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <div x-show="isTyping" class="flex justify-start">
+                    <div
+                        class="bg-white text-gray-400 p-3 rounded-lg rounded-tl-none shadow-sm text-xs border border-gray-100 italic">
+                        Agent is typing...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="p-4 bg-white border-t border-gray-100">
+                <form @submit.prevent="sendMessage" class="flex space-x-2">
+                    <input type="text" x-model="newMessage" placeholder="Type a message..."
+                        class="flex-1 appearance-none border border-gray-300 rounded-full py-2 px-4 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand text-sm transition-shadow">
+                    <button type="submit"
+                        class="bg-brand text-white rounded-full p-2 hover:bg-brand-hover focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 transition-colors disabled:opacity-50"
+                        :disabled="!newMessage.trim()">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Float Button -->
+        <button @click="isOpen = !isOpen"
+            class="bg-brand text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center hover:bg-brand-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand transition-all transform hover:scale-105"
+            :class="{'rotate-90': isOpen}">
+            <svg x-show="!isOpen" class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z">
+                </path>
+            </svg>
+            <svg x-show="isOpen" class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                style="display: none;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+    </div>
+
+    <script>
+        function chatWidget() {
+            return {
+                isOpen: false,
+                newMessage: '',
+                messages: [],
+                isTyping: false,
+                sessionId: null,
+                hasGreeted: false,
+
+                init() {
+                    // Unique session for logged-in users, fallback to guest session
+                    const user = Alpine.store('auth') && Alpine.store('auth').user;
+                    if (user && user.email) {
+                        this.sessionId = 'chat_' + user.email.replace(/[^a-zA-Z0-9]/g, '_');
+                    } else {
+                        this.sessionId = localStorage.getItem('mj_chat_session_id');
+                        if (!this.sessionId) {
+                            this.sessionId = 'session_' + Date.now();
+                            localStorage.setItem('mj_chat_session_id', this.sessionId);
+                        }
+                    }
+                    this.loadMessages();
+                    if (this.messages.length > 0) this.hasGreeted = true;
+
+                    // Real-time polling
+                    setInterval(() => {
+                        this.loadMessages();
+                    }, 2000);
+                },
+
+                loadMessages() {
+                    const allChats = JSON.parse(localStorage.getItem('mj_support_chats') || '{}');
+                    if (allChats[this.sessionId]) {
+                        // Check if new messages arrived to avoid unnecessary re-renders/scrolls if possible, 
+                        // but for simplicity replacement is fine.
+                        const oldLen = this.messages.length;
+                        this.messages = allChats[this.sessionId].messages;
+                        if (this.messages.length > oldLen) {
+                            this.scrollToBottom();
+                        }
+                    }
+                },
+
+                sendMessage() {
+                    const text = this.newMessage.trim();
+                    if (!text) return;
+
+                    const msg = {
+                        id: Date.now(),
+                        text: text,
+                        isUser: true,
+                        timestamp: new Date().toISOString()
+                    };
+
+                    this.messages.push(msg);
+                    this.newMessage = '';
+                    this.scrollToBottom();
+                    this.saveToGlobalStore(msg);
+
+                    // Simulated simple welcome if first message
+                    if (!this.hasGreeted) {
+                        this.isTyping = true;
+                        this.scrollToBottom();
+                        setTimeout(() => {
+                            this.isTyping = false;
+                            const botMsg = {
+                                id: Date.now() + 1,
+                                text: 'Thanks for reaching out! An admin will review your message shortly.',
+                                isUser: false,
+                                timestamp: new Date().toISOString()
+                            };
+                            this.messages.push(botMsg);
+                            this.saveToGlobalStore(botMsg);
+                            this.hasGreeted = true;
+                            this.scrollToBottom();
+                        }, 1500);
+                    }
+                },
+
+                saveToGlobalStore(msg) {
+                    const allChats = JSON.parse(localStorage.getItem('mj_support_chats') || '{}');
+                    if (!allChats[this.sessionId]) {
+                        const user = Alpine.store('auth') ? Alpine.store('auth').user : null;
+                        allChats[this.sessionId] = {
+                            id: this.sessionId,
+                            customerName: user ? user.name : 'Guest User',
+                            customerEmail: user ? user.email : 'N/A',
+                            lastMessage: msg.text,
+                            lastUpdated: new Date().toISOString(),
+                            status: 'Open',
+                            messages: []
+                        };
+                    }
+                    allChats[this.sessionId].messages.push(msg);
+                    allChats[this.sessionId].lastMessage = msg.text;
+                    allChats[this.sessionId].lastUpdated = new Date().toISOString();
+                    localStorage.setItem('mj_support_chats', JSON.stringify(allChats));
+                },
+
+                toggleChat() {
+                    // Simple toggle, auth check removed for guest chat support if desired or keep consistent
+                    this.isOpen = !this.isOpen;
+                    if (this.isOpen) {
+                        this.scrollToBottom();
+                    }
+                },
+
+                scrollToBottom() {
+                    this.$nextTick(() => {
+                        const container = document.getElementById('chat-messages');
+                        if (container) {
+                            container.scrollTop = container.scrollHeight;
+                        }
+                    });
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

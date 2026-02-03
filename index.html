@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MJ Print Advertisement - Quote System</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/store.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            DEFAULT: '#319F43', // MJ Green
+                            hover: '#288A3A',
+                            light: '#EAF7EC',
+                            red: '#ED1C24'      // MJ Red
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800" x-data="{ 
+    mobileMenuOpen: false,
+    showLoginModal: false,
+    triggerLogin() {
+        this.showLoginModal = true;
+    }
+}" @trigger-login-modal.window="showLoginModal = true">
+
+    <!-- Login Required Modal -->
+    <div x-show="showLoginModal" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
+        aria-modal="true" style="display: none;">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div x-show="showLoginModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
+                x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"
+                @click="showLoginModal = false"></div>
+
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div x-show="showLoginModal" x-transition:enter="ease-out duration-300"
+                x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave="ease-in duration-200"
+                x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-sm sm:w-full sm:p-6">
+                <div>
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                        <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-5">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Login Required</h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-500">Please sign in to view products, search, or place an order.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-5 sm:mt-6 grid grid-cols-2 gap-3">
+                    <button type="button" @click="window.location.href='login.html'"
+                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-brand text-base font-medium text-white hover:bg-brand-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand sm:text-sm">
+                        Sign In
+                    </button>
+                    <button type="button" @click="showLoginModal = false"
+                        class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand sm:text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 sm:h-20">
+                <a href="index.html" class="flex items-center group">
+                    <div class="flex flex-col justify-center leading-none">
+                        <div class="flex items-baseline">
+                            <span
+                                class="text-3xl font-extrabold text-brand tracking-tighter group-hover:scale-105 transition-transform">MJ</span>
+                            <span class="text-2xl font-bold text-black italic ml-1">PRINT</span>
+                        </div>
+                        <span
+                            class="text-[10px] font-bold text-brand tracking-widest uppercase sm:block hidden">Advertisement</span>
+                    </div>
+                </a>
+
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="index.html" class="text-gray-900 font-bold text-brand">Home</a>
+                    <a href="portfolio.html" class="text-gray-500 hover:text-brand font-medium">Portfolio</a>
+                    <a href="reviews.html" class="text-gray-500 hover:text-brand font-medium">Reviews</a>
+
+                    <!-- Dynamic Auth Link -->
+                    <template x-if="$store.auth.isLoggedIn">
+                        <a href="profile.html" class="text-gray-500 hover:text-brand font-medium"
+                            x-text="'My Account (' + $store.auth.user.name.split(' ')[0] + ')'">My Account</a>
+                    </template>
+
+                    <a href="about.html" class="text-gray-500 hover:text-brand font-medium">About Us</a>
+                    <a href="cart.html" class="relative group">
+                        <svg class="w-7 h-7 text-gray-400 group-hover:text-brand transition-colors" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z">
+                            </path>
+                        </svg>
+                        <span x-text="$store.cart.count"
+                            class="absolute -top-2 -right-2 bg-brand-red text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">0</span>
+                    </a>
+
+                    <!-- Login/Register (Only if not logged in) -->
+                    <template x-if="!$store.auth.isLoggedIn">
+                        <a href="login.html"
+                            class="text-xs font-semibold text-brand border border-brand px-3 py-1 rounded-full hover:bg-brand hover:text-white transition-colors">Sign
+                            In</a>
+                    </template>
+                </div>
+
+                <div class="flex items-center md:hidden">
+                    <button @click="mobileMenuOpen = !mobileMenuOpen" class="text-gray-500 hover:text-gray-900 p-2">
+                        <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div x-show="mobileMenuOpen" class="md:hidden bg-white border-t border-gray-100 shadow-xl" x-transition>
+            <div class="px-4 pt-2 pb-4 space-y-2">
+                <a href="index.html"
+                    class="block px-4 py-3 text-base font-bold text-brand bg-green-50 rounded-lg">Home</a>
+                <a href="portfolio.html"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Portfolio</a>
+                <a href="reviews.html"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Reviews</a>
+                <a href="track.html"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Track
+                    Order</a>
+                <a href="about.html"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">About
+                    Us</a>
+                <a href="cart.html"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Cart
+                    (<span x-text="$store.cart.count">0</span>)</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:py-20 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-4xl font-extrabold text-gray-900 sm:text-5xl sm:tracking-tight lg:text-6xl">
+                Your Ideas, <span class="text-brand">Printed</span> to Perfection.
+            </h1>
+            <p class="mt-4 max-w-xl mx-auto text-lg sm:text-xl text-gray-500">
+                High-quality large format, merchandise, and document printing services by <strong>MJ Print
+                    Advertisement</strong>.
+            </p>
+
+            <div class="mt-8 flex justify-center" x-data="{
+                query: '',
+                search() {
+                    if (!$store.auth.isLoggedIn) {
+                        triggerLogin();
+                        return;
+                    }
+
+                    const q = this.query.toLowerCase();
+                    if (q.includes('flyer') || q.includes('paper') || q.includes('document') || q.includes('xerox') || q.includes('print')) {
+                        window.location.href = 'document.html';
+                    } else if (q.includes('tarp') || q.includes('banner') || q.includes('sign') || q.includes('large') || q.includes('sticker')) {
+                        window.location.href = 'large.html';
+                    } else if (q.includes('shirt') || q.includes('mug') || q.includes('lace') || q.includes('id') || q.includes('keychain')) {
+                        window.location.href = 'merchandise.html';
+                    } else if (q.includes('photo') || q.includes('picture') || q.includes('image') || q.includes('develop')) {
+                        window.location.href = 'photo.html';
+                    } else {
+                        alert('No exact match found. Please browse our categories below!');
+                    }
+                }
+            }">
+                <div class="relative w-full max-w-md">
+                    <input type="text" placeholder="I need 100 flyers..." x-model="query" @keydown.enter="search"
+                        class="w-full px-5 py-4 border border-gray-300 rounded-full shadow-sm focus:ring-2 focus:ring-brand focus:border-brand outline-none text-base sm:text-lg">
+                    <button @click="search"
+                        class="absolute right-2 top-2 bottom-2 bg-brand text-white px-4 sm:px-6 rounded-full font-medium hover:bg-brand-hover transition-colors text-sm sm:text-base">
+                        Search
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <h2 class="text-2xl font-bold text-gray-900 mb-8">What are we printing?</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+            <!-- Core Printing Services -->
+            <a href="#" @click.prevent="$store.auth.isLoggedIn ? window.location.href='document.html' : triggerLogin()"
+                class="group bg-white rounded-xl shadow-sm hover:shadow-xl border border-gray-100 transition-all cursor-pointer overflow-hidden transform hover:-translate-y-1 block">
+                <div
+                    class="h-36 bg-brand-light flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-colors">
+                    <svg class="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z">
+                        </path>
+                    </svg>
+                </div>
+                <div class="p-5">
+                    <h3 class="text-lg font-bold text-gray-900 group-hover:text-brand transition-colors">Core Printing
+                    </h3>
+                    <p class="text-sm text-gray-500 mt-2">Documents, Photos, Large Format, ID/Wallet Size, Stickers.</p>
+                </div>
+            </a>
+
+            <!-- Paper & Finishing (Walk-in Only) -->
+            <a href="walk-in-services.html"
+                class="group bg-white rounded-xl shadow-sm hover:shadow-xl border border-gray-100 transition-all cursor-pointer overflow-hidden transform hover:-translate-y-1 block relative">
+                <div
+                    class="absolute top-3 right-3 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-full z-10">
+                    Walk-in Only</div>
+                <div
+                    class="h-36 bg-brand-light flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-colors">
+                    <svg class="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                        </path>
+                    </svg>
+                </div>
+                <div class="p-5">
+                    <h3 class="text-lg font-bold text-gray-900 group-hover:text-brand transition-colors">Paper &
+                        Finishing</h3>
+                    <p class="text-sm text-gray-500 mt-2">Photocopy, Scanning, Lamination, Binding, Cutting.</p>
+                </div>
+            </a>
+
+            <!-- Marketing Materials -->
+            <a href="#" @click.prevent="$store.auth.isLoggedIn ? window.location.href='large.html' : triggerLogin()"
+                class="group bg-white rounded-xl shadow-sm hover:shadow-xl border border-gray-100 transition-all cursor-pointer overflow-hidden transform hover:-translate-y-1 block">
+                <div
+                    class="h-36 bg-brand-light flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-colors">
+                    <svg class="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
+                    </svg>
+                </div>
+                <div class="p-5">
+                    <h3 class="text-lg font-bold text-gray-900 group-hover:text-brand transition-colors">Marketing
+                        Materials</h3>
+                    <p class="text-sm text-gray-500 mt-2">Flyers, Brochures, Business Cards, Posters, Banners.</p>
+                </div>
+            </a>
+
+            <!-- Custom Items -->
+            <a href="#"
+                @click.prevent="$store.auth.isLoggedIn ? window.location.href='merchandise.html' : triggerLogin()"
+                class="group bg-white rounded-xl shadow-sm hover:shadow-xl border border-gray-100 transition-all cursor-pointer overflow-hidden transform hover:-translate-y-1 block">
+                <div
+                    class="h-36 bg-brand-light flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-colors">
+                    <svg class="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7">
+                        </path>
+                    </svg>
+                </div>
+                <div class="p-5">
+                    <h3 class="text-lg font-bold text-gray-900 group-hover:text-brand transition-colors">Custom Items
+                    </h3>
+                    <p class="text-sm text-gray-500 mt-2">T-Shirts, Mugs, Caps, Tote Bags, Button Pins.</p>
+                </div>
+            </a>
+
+            <!-- School & Office -->
+            <a href="#" @click.prevent="$store.auth.isLoggedIn ? window.location.href='document.html' : triggerLogin()"
+                class="group bg-white rounded-xl shadow-sm hover:shadow-xl border border-gray-100 transition-all cursor-pointer overflow-hidden transform hover:-translate-y-1 block">
+                <div
+                    class="h-36 bg-brand-light flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-colors">
+                    <svg class="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+                        </path>
+                    </svg>
+                </div>
+                <div class="p-5">
+                    <h3 class="text-lg font-bold text-gray-900 group-hover:text-brand transition-colors">School & Office
+                    </h3>
+                    <p class="text-sm text-gray-500 mt-2">Thesis, Reports, Modules, Certificates, Forms.</p>
+                </div>
+            </a>
+
+            <!-- Events & Personal -->
+            <a href="#" @click.prevent="$store.auth.isLoggedIn ? window.location.href='events.html' : triggerLogin()"
+                class="group bg-white rounded-xl shadow-sm hover:shadow-xl border border-gray-100 transition-all cursor-pointer overflow-hidden transform hover:-translate-y-1 block">
+                <div
+                    class="h-36 bg-brand-light flex items-center justify-center text-brand group-hover:bg-brand group-hover:text-white transition-colors">
+                    <svg class="w-14 h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z">
+                        </path>
+                    </svg>
+                </div>
+                <div class="p-5">
+                    <h3 class="text-lg font-bold text-gray-900 group-hover:text-brand transition-colors">Events &
+                        Personal</h3>
+                    <p class="text-sm text-gray-500 mt-2">Invitations, Souvenirs, Photo Books, Greeting Cards.</p>
+                </div>
+            </a>
+
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 border-t border-gray-800 mt-auto">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+            <div class="md:flex md:items-center md:justify-between">
+                <div class="flex justify-center md:justify-start">
+                    <span class="text-2xl font-extrabold text-white tracking-tighter">MJ</span>
+                    <span class="text-xl font-bold text-gray-400 italic ml-1">PRINT</span>
+                </div>
+                <div class="mt-8 md:mt-0 flex space-x-6 justify-center md:justify-end">
+                    <a href="file-guide.html" class="text-gray-400 hover:text-white transition-colors">File Guide</a>
+                    <span class="text-gray-600">|</span>
+                    <a href="faq.html" class="text-gray-400 hover:text-white transition-colors">FAQ</a>
+                    <span class="text-gray-600">|</span>
+                    <span class="text-center text-base text-gray-400">
+                        &copy; 2026 MJ Print Advertisement. All rights reserved.
+                    </span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Live Chat Widget -->
+    <div x-data="chatWidget()" class="fixed bottom-6 right-6 z-50 flex flex-col items-end space-y-4">
+
+        <!-- Chat Window -->
+        <div x-show="isOpen" x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+            x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+            x-transition:leave-end="opacity-0 translate-y-4 scale-95"
+            class="bg-white w-80 sm:w-96 rounded-2xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col"
+            style="height: 500px; display: none;">
+
+            <!-- Header -->
+            <div class="bg-brand p-4 flex justify-between items-center text-white">
+                <div class="flex items-center space-x-2">
+                    <div class="w-2 h-2 bg-green-300 rounded-full animate-pulse"></div>
+                    <h3 class="font-bold">MJ Print Support</h3>
+                </div>
+                <button @click="isOpen = false" class="text-white hover:text-gray-200 focus:outline-none">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Messages Area -->
+            <div class="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50" id="chat-messages">
+                <!-- Initial Bot Message -->
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 bg-brand-light rounded-full p-1 mr-2">
+                        <svg class="w-4 h-4 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                        </svg>
+                    </div>
+                    <div
+                        class="bg-white text-gray-800 p-3 rounded-lg rounded-tl-none shadow-sm text-sm border border-gray-100">
+                        Hi! Welcome to MJ Print Advertisement. How can we help you today?
+                    </div>
+                </div>
+
+
+                <template x-for="(msg, index) in messages" :key="msg.id">
+                    <div>
+                        <!-- Date separator -->
+                        <template
+                            x-if="index === 0 || new Date(msg.timestamp || msg.id).toDateString() !== new Date(messages[index - 1].timestamp || messages[index - 1].id).toDateString()">
+                            <div class="flex justify-center my-3">
+                                <span class="text-xs text-gray-500 bg-gray-200 px-3 py-1 rounded-full"
+                                    x-text="new Date(msg.timestamp || msg.id).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })">
+                                </span>
+                            </div>
+                        </template>
+
+                        <!-- Message bubble -->
+                        <div class="flex" :class="msg.isUser ? 'justify-end' : 'justify-start'">
+                            <div class="max-w-[80%] p-3 rounded-lg text-sm shadow-sm"
+                                :class="msg.isUser ? 'bg-brand text-white rounded-tr-none' : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'">
+                                <span x-text="msg.text"></span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <div x-show="isTyping" class="flex justify-start">
+                    <div
+                        class="bg-white text-gray-400 p-3 rounded-lg rounded-tl-none shadow-sm text-xs border border-gray-100 italic">
+                        Agent is typing...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="p-4 bg-white border-t border-gray-100">
+                <form @submit.prevent="sendMessage" class="flex space-x-2">
+                    <input type="text" x-model="newMessage" placeholder="Type a message..."
+                        class="flex-1 appearance-none border border-gray-300 rounded-full py-2 px-4 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand text-sm transition-shadow">
+                    <button type="submit"
+                        class="bg-brand text-white rounded-full p-2 hover:bg-brand-hover focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 transition-colors disabled:opacity-50"
+                        :disabled="!newMessage.trim()">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Float Button -->
+        <button @click="toggleChat()"
+            class="bg-brand text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center hover:bg-brand-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand transition-all transform hover:scale-105"
+            :class="{'rotate-90': isOpen}">
+            <svg x-show="!isOpen" class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z">
+                </path>
+            </svg>
+            <svg x-show="isOpen" class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                style="display: none;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+    </div>
+
+    <script>
+        function chatWidget() {
+            return {
+                isOpen: false,
+                newMessage: '',
+                messages: [],
+                isTyping: false,
+                sessionId: null,
+                hasGreeted: false,
+
+                init() {
+                    // Unique session for logged-in users, fallback to guest session
+                    const user = Alpine.store('auth') && Alpine.store('auth').user;
+                    if (user && user.email) {
+                        this.sessionId = 'chat_' + user.email.replace(/[^a-zA-Z0-9]/g, '_');
+                    } else {
+                        this.sessionId = localStorage.getItem('mj_chat_session_id');
+                        if (!this.sessionId) {
+                            this.sessionId = 'session_' + Date.now();
+                            localStorage.setItem('mj_chat_session_id', this.sessionId);
+                        }
+                    }
+                    this.loadMessages();
+                    if (this.messages.length > 0) this.hasGreeted = true;
+
+                    // Real-time polling
+                    setInterval(() => {
+                        this.loadMessages();
+                    }, 2000);
+                },
+
+                loadMessages() {
+                    const allChats = JSON.parse(localStorage.getItem('mj_support_chats') || '{}');
+                    if (allChats[this.sessionId]) {
+                        this.messages = allChats[this.sessionId].messages;
+                    }
+                },
+
+                toggleChat() {
+                    if (!Alpine.store('auth').isLoggedIn) {
+                        window.dispatchEvent(new CustomEvent('trigger-login-modal'));
+                        return;
+                    }
+                    this.isOpen = !this.isOpen;
+                },
+
+                saveToGlobalStore(msg) {
+                    const allChats = JSON.parse(localStorage.getItem('mj_support_chats') || '{}');
+                    const user = Alpine.store('auth').user;
+
+                    if (!allChats[this.sessionId]) {
+                        allChats[this.sessionId] = {
+                            id: this.sessionId,
+                            customerName: user ? user.name : 'Guest User',
+                            customerEmail: user ? user.email : 'N/A',
+                            lastMessage: msg.text,
+                            lastUpdated: new Date().toISOString(),
+                            status: 'Open',
+                            messages: []
+                        };
+                    }
+
+                    allChats[this.sessionId].messages.push(msg);
+                    allChats[this.sessionId].lastMessage = msg.text;
+                    allChats[this.sessionId].lastUpdated = new Date().toISOString();
+                    if (user) {
+                        allChats[this.sessionId].customerName = user.name;
+                        allChats[this.sessionId].customerEmail = user.email;
+                    }
+
+                    localStorage.setItem('mj_support_chats', JSON.stringify(allChats));
+                },
+
+                sendMessage() {
+                    const text = this.newMessage.trim();
+                    if (!text) return;
+
+                    const msg = {
+                        id: Date.now(),
+                        text: text,
+                        isUser: true,
+                        timestamp: new Date().toISOString()
+                    };
+
+                    this.messages.push(msg);
+                    this.newMessage = '';
+                    this.scrollToBottom();
+                    this.saveToGlobalStore(msg);
+
+                    if (!this.hasGreeted) {
+                        this.isTyping = true;
+                        this.scrollToBottom();
+
+                        setTimeout(() => {
+                            this.isTyping = false;
+                            const botMsg = {
+                                id: Date.now() + 1,
+                                text: 'Thanks for reaching out! An admin will review your message shortly.',
+                                isUser: false,
+                                timestamp: new Date().toISOString()
+                            };
+                            this.messages.push(botMsg);
+                            this.saveToGlobalStore(botMsg);
+                            this.hasGreeted = true;
+                            this.scrollToBottom();
+                        }, 1500);
+                    }
+                },
+
+                scrollToBottom() {
+                    this.$nextTick(() => {
+                        const container = document.getElementById('chat-messages');
+                        if (container) {
+                            container.scrollTop = container.scrollHeight;
+                        }
+                    });
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - MJ Print Advertisement</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        // Security Check
+        try {
+            const session = localStorage.getItem('mj_admin_session');
+            if (!session) throw new Error('No session');
+            const parsed = JSON.parse(session);
+            if (parsed.role !== 'superadmin') throw new Error('Invalid role');
+        } catch (e) {
+            window.location.href = 'admin-login.html';
+        }
+
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            DEFAULT: '#ED1C24', // MJ Red
+                            hover: '#C4131A',
+                            light: '#FDEDEE',
+                            dark: '#8E1C1F',
+                            green: '#319F43'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        [x-cloak] {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 text-gray-800 h-screen overflow-hidden" x-data="dashboardApp()">
+
+    <div class="flex h-full" x-cloak>
+
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gray-900 text-white flex flex-col shadow-xl flex-shrink-0 z-20">
+            <div class="h-16 flex items-center justify-center border-b border-gray-800 bg-gray-900">
+                <a href="admin-dashboard.html"
+                    class="text-2xl font-extrabold tracking-tighter hover:opacity-80 transition-opacity"
+                    title="Go to Website">
+                    MJ<span class="italic ml-1 text-brand">ADMIN</span>
+                </a>
+            </div>
+
+            <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+                <p class="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Menu</p>
+
+                <a href="#" @click.prevent="currentView = 'dashboard'"
+                    :class="currentView === 'dashboard' ? 'bg-brand text-white shadow-md' : 'text-gray-400 hover:bg-gray-800 hover:text-white'"
+                    class="flex items-center px-4 py-3 rounded-lg transition-all font-medium">
+                    <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                    </svg>
+                    Overview
+                </a>
+
+                <a href="#" @click.prevent="currentView = 'orders'"
+                    :class="currentView === 'orders' ? 'bg-brand text-white shadow-md' : 'text-gray-400 hover:bg-gray-800 hover:text-white'"
+                    class="flex items-center px-4 py-3 rounded-lg transition-all font-medium justify-between group">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                        </svg>
+                        Orders
+                    </div>
+                    <span x-show="pendingCount > 0" x-text="pendingCount"
+                        class="bg-brand-red text-white text-xs font-bold px-2 py-0.5 rounded-full"
+                        :class="currentView === 'orders' ? 'bg-white text-brand-red' : 'bg-brand-red text-white'"></span>
+                </a>
+
+                <a href="#" @click.prevent="currentView = 'reviews'"
+                    :class="currentView === 'reviews' ? 'bg-brand text-white shadow-md' : 'text-gray-400 hover:bg-gray-800 hover:text-white'"
+                    class="flex items-center px-4 py-3 rounded-lg transition-all font-medium">
+                    <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                    </svg>
+                    Reviews
+                </a>
+
+                <a href="#" @click.prevent="currentView = 'customers'"
+                    :class="currentView === 'customers' ? 'bg-brand text-white shadow-md' : 'text-gray-400 hover:bg-gray-800 hover:text-white'"
+                    class="flex items-center px-4 py-3 rounded-lg transition-all font-medium group">
+                    <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    Customers
+                </a>
+            </nav>
+
+            <div class="p-4 border-t border-gray-800 bg-gray-900">
+                <button @click="logout"
+                    class="flex items-center w-full px-4 py-2 text-gray-400 hover:text-white hover:bg-red-500/10 rounded-lg transition-colors">
+                    <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    Sign Out
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col overflow-hidden bg-gray-50">
+
+            <!-- Header -->
+            <header
+                class="h-16 bg-white shadow-sm flex items-center justify-between px-8 z-10 border-b border-gray-200">
+                <h2 class="text-xl font-bold text-gray-800 capitalize" x-text="viewTitle"></h2>
+
+                <div class="flex items-center space-x-4">
+                    <button class="text-gray-400 hover:text-gray-600 relative">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
+                            </path>
+                        </svg>
+                        <span x-show="pendingCount > 0"
+                            class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+                    </button>
+                    <div class="h-8 w-px bg-gray-200"></div>
+                    <div class="flex items-center text-gray-700">
+                        <div
+                            class="h-8 w-8 rounded-full bg-brand/10 text-brand flex items-center justify-center font-bold mr-3 border border-brand/20">
+                            A</div>
+                        <div class="flex flex-col">
+                            <span class="font-semibold text-sm leading-tight">Admin User</span>
+                            <span class="text-xs text-gray-500">Super Admin</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard View -->
+            <div x-show="currentView === 'dashboard'" class="flex-1 overflow-y-auto p-8"
+                x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4"
+                x-transition:enter-end="opacity-100 translate-y-0">
+
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <!-- Revenue -->
+                    <div
+                        class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-gray-500 font-medium text-sm text-transform uppercase tracking-wider">Total
+                                Revenue</h3>
+                            <div class="p-3 bg-green-50 text-green-600 rounded-lg">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                    </path>
+                                </svg>
+                            </div>
+                        </div>
+                        <p class="text-3xl font-extrabold text-gray-900"
+                            x-text="'₱' + totalRevenue.toLocaleString('en-US', {minimumFractionDigits: 2})">₱0.00</p>
+                        <p class="text-sm text-green-600 mt-2 flex items-center font-medium">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                            </svg>
+                            +12.5% <span class="text-gray-400 ml-1 font-normal">from last month</span>
+                        </p>
+                    </div>
+
+                    <!-- Active Orders -->
+                    <div
+                        class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-gray-500 font-medium text-sm text-transform uppercase tracking-wider">Active
+                                Orders</h3>
+                            <div class="p-3 bg-blue-50 text-blue-600 rounded-lg">
+                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <p class="text-3xl font-extrabold text-gray-900" x-text="activeOrdersCount">0</p>
+                        <p class="text-sm text-gray-500 mt-2 flex items-center">
+                            In production or ready for pickup
+                        </p>
+                    </div>
+
+                    <!-- Pending -->
+                    <div
+                        class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-gray-500 font-medium text-sm text-transform uppercase tracking-wider">
+                                Pending Action</h3>
+                            <div class="p-3 bg-orange-50 text-orange-600 rounded-lg">
+                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <p class="text-3xl font-extrabold text-gray-900" x-text="pendingCount">0</p>
+                        <div class="mt-2 text-sm font-medium"
+                            :class="pendingCount > 0 ? 'text-orange-600' : 'text-gray-400'">
+                            <span x-show="pendingCount > 0">Requires attention</span>
+                            <span x-show="pendingCount === 0">All caught up!</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                        <h3 class="font-bold text-gray-800">Recent Orders</h3>
+                        <button @click="currentView = 'orders'"
+                            class="text-sm text-brand font-semibold hover:text-brand-dark hover:underline">View All
+                            Orders</button>
+                    </div>
+                    <ul class="divide-y divide-gray-100">
+                        <template x-for="order in recentOrders" :key="order.id">
+                            <li class="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer"
+                                @click="currentView = 'orders'">
+                                <div class="flex items-center">
+                                    <div class="h-10 w-10 rounded-full bg-brand-light flex items-center justify-center text-brand font-bold mr-4 border border-brand/20"
+                                        x-text="order.customer ? order.customer.charAt(0).toUpperCase() : '?'"></div>
+                                    <div>
+                                        <div class="flex items-center">
+                                            <span class="text-sm font-bold text-gray-900 mr-2"
+                                                x-text="'#' + order.id"></span>
+                                            <span class="text-xs text-gray-400" x-text="formatDate(order.date)"></span>
+                                        </div>
+                                        <p class="text-sm text-gray-600 truncate max-w-xs"
+                                            x-text="order.items.map(i => i.name).join(', ')"></p>
+                                    </div>
+                                </div>
+                                <span class="px-3 py-1 text-xs font-bold rounded-full border shadow-sm"
+                                    :class="getStatusClass(order.status)" x-text="order.status"></span>
+                            </li>
+                        </template>
+                        <li x-show="orders.length === 0" class="px-6 py-8 text-center text-gray-500 italic">
+                            No recent activity found.
+                        </li>
+                    </ul>
+                </div>
+
+            </div>
+
+            <!-- Orders View -->
+            <div x-show="currentView === 'orders'" class="flex-1 overflow-y-auto p-8"
+                x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4"
+                x-transition:enter-end="opacity-100 translate-y-0">
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full">
+
+                    <!-- Toolbar -->
+                    <div
+                        class="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50">
+                        <div class="relative w-full sm:w-64">
+                            <span
+                                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </span>
+                            <input type="text" x-model="searchQuery" placeholder="Search Customer..."
+                                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand">
+                        </div>
+
+                        <div class="flex space-x-2">
+                            <select x-model="filterStatus"
+                                class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand">
+                                <option value="All">All Status</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Processing">Processing</option>
+                                <option value="Ready">Ready</option>
+                                <option value="Completed">Completed</option>
+                            </select>
+
+                        </div>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="flex-1 overflow-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead
+                                class="bg-gray-100 text-gray-500 text-xs uppercase font-bold tracking-wider sticky top-0 z-10">
+                                <tr>
+                                    <th class="px-6 py-4 border-b border-gray-200">Order ID / Date</th>
+                                    <th class="px-6 py-4 border-b border-gray-200">Customer</th>
+                                    <th class="px-6 py-4 border-b border-gray-200">Items Detail</th>
+                                    <th class="px-6 py-4 border-b border-gray-200">Total Price</th>
+                                    <th class="px-6 py-4 border-b border-gray-200 center">Status</th>
+                                    <th class="px-6 py-4 border-b border-gray-200 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 text-sm bg-white">
+                                <template x-for="order in filteredOrders" :key="order.id">
+                                    <tr class="hover:bg-gray-50 transition-colors group">
+                                        <td class="px-6 py-4 align-top">
+                                            <div class="font-bold text-gray-900" x-text="'#' + order.id"></div>
+                                            <div class="text-xs text-gray-500 mt-1" x-text="formatDate(order.date)">
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 align-top">
+                                            <div class="font-medium text-gray-900" x-text="order.customer"></div>
+                                            <div class="text-gray-500 text-xs mt-0.5" x-text="order.email"></div>
+                                            <div class="text-gray-400 text-xs mt-0.5"
+                                                x-text="order.phone || 'No phone'"></div>
+                                        </td>
+                                        <td class="px-6 py-4 align-top">
+                                            <ul class="space-y-1">
+                                                <template x-for="item in order.items">
+                                                    <li class="text-gray-600 flex items-start">
+                                                        <span
+                                                            class="text-xs bg-gray-100 border border-gray-200 rounded px-1.5 py-0.5 mr-2 font-mono"
+                                                            x-text="'x' + item.quantity"></span>
+                                                        <span class="truncate max-w-xs"
+                                                            x-text="item.name + (item.details ? ' (' + item.details + ')' : '')"></span>
+                                                    </li>
+                                                </template>
+                                            </ul>
+                                            <div x-show="order.items.some(i => i.file)" class="mt-2">
+                                                <span
+                                                    class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                    <svg class="mr-1.5 h-2 w-2 text-blue-400" fill="currentColor"
+                                                        viewBox="0 0 8 8">
+                                                        <circle cx="4" cy="4" r="3" />
+                                                    </svg>
+                                                    Files Attached
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 align-top font-bold text-gray-900 font-mono tracking-tight"
+                                            x-text="'₱' + order.total.toLocaleString('en-US', {minimumFractionDigits: 2})">
+                                        </td>
+                                        <td class="px-6 py-4 align-top">
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border"
+                                                :class="getStatusClass(order.status)" x-text="order.status"></span>
+                                        </td>
+                                        <td class="px-6 py-4 align-top text-right">
+                                            <div class="relative inline-block text-left" x-data="{ open: false }">
+                                                <button @click="open = !open" @click.outside="open = false"
+                                                    class="text-gray-400 hover:text-brand bg-white hover:bg-gray-100 rounded-full p-2 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand">
+                                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                                        stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                                    </svg>
+                                                </button>
+
+                                                <div x-show="open"
+                                                    class="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 transform origin-top-right focus:outline-none"
+                                                    x-transition:enter="transition ease-out duration-100"
+                                                    x-transition:enter-start="transform opacity-0 scale-95"
+                                                    x-transition:enter-end="transform opacity-100 scale-100"
+                                                    x-transition:leave="transition ease-in duration-75"
+                                                    x-transition:leave-start="transform opacity-100 scale-100"
+                                                    x-transition:leave-end="transform opacity-0 scale-95">
+                                                    <div class="py-1">
+                                                        <p
+                                                            class="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-50">
+                                                            Change Status</p>
+
+                                                        <button @click="updateStatus(order.id, 'Pending'); open = false"
+                                                            class="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-yellow-50 hover:text-yellow-700">
+                                                            <span
+                                                                class="w-2 h-2 rounded-full bg-yellow-400 mr-2 group-hover:animate-pulse"></span>
+                                                            Pending
+                                                        </button>
+
+                                                        <button
+                                                            @click="updateStatus(order.id, 'Processing'); open = false"
+                                                            class="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700">
+                                                            <span
+                                                                class="w-2 h-2 rounded-full bg-blue-400 mr-2 group-hover:animate-pulse"></span>
+                                                            Processing
+                                                        </button>
+
+                                                        <button
+                                                            @click="updateStatus(order.id, 'Ready for Pickup'); open = false"
+                                                            class="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700">
+                                                            <span
+                                                                class="w-2 h-2 rounded-full bg-purple-400 mr-2 group-hover:animate-pulse"></span>
+                                                            Ready for Pickup
+                                                        </button>
+
+                                                        <button
+                                                            @click="updateStatus(order.id, 'Out for Delivery'); open = false"
+                                                            class="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700">
+                                                            <span
+                                                                class="w-2 h-2 rounded-full bg-purple-400 mr-2 group-hover:animate-pulse"></span>
+                                                            Out for Delivery
+                                                        </button>
+
+                                                        <button
+                                                            @click="updateStatus(order.id, 'Completed'); open = false"
+                                                            class="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700">
+                                                            <span class="w-2 h-2 rounded-full bg-green-400 mr-2"></span>
+                                                            Completed
+                                                        </button>
+
+                                                        <div class="border-t border-gray-100 my-1"></div>
+
+                                                        <label
+                                                            class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer">
+                                                            <svg class="w-4 h-4 mr-2 text-gray-500" fill="none"
+                                                                stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    stroke-width="2"
+                                                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12">
+                                                                </path>
+                                                            </svg>
+                                                            Upload Proof
+                                                            <input type="file" class="hidden"
+                                                                @change="uploadProof($event, order.id)">
+                                                        </label>
+
+                                                        <div class="border-t border-gray-100 my-1"></div>
+                                                        <button @click="deleteOrder(order.id); open = false"
+                                                            class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                                            Delete Order
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+
+                        <div x-show="filteredOrders.length === 0" class="p-12 text-center">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <h3 class="mt-2 text-sm font-medium text-gray-900">No orders found</h3>
+                            <p class="mt-1 text-sm text-gray-500">Try adjusting your search or filter.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Reviews View -->
+            <div x-show="currentView === 'reviews'" class="flex-1 overflow-y-auto p-8"
+                x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4"
+                x-transition:enter-end="opacity-100 translate-y-0">
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full">
+                    <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                        <h3 class="font-bold text-gray-800">Customer Reviews</h3>
+                    </div>
+
+                    <div class="flex-1 overflow-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead
+                                class="bg-gray-100 text-gray-500 text-xs uppercase font-bold tracking-wider sticky top-0 z-10">
+                                <tr>
+                                    <th class="px-6 py-4 border-b border-gray-200">User</th>
+                                    <th class="px-6 py-4 border-b border-gray-200">Role</th>
+                                    <th class="px-6 py-4 border-b border-gray-200">Rating</th>
+                                    <th class="px-6 py-4 border-b border-gray-200 w-1/2">Review</th>
+                                    <th class="px-6 py-4 border-b border-gray-200 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 text-sm bg-white">
+                                <template x-for="review in reviews" :key="review.id">
+                                    <tr class="hover:bg-gray-50 transition-colors">
+                                        <td class="px-6 py-4 align-top font-medium text-gray-900" x-text="review.name">
+                                        </td>
+                                        <td class="px-6 py-4 align-top text-gray-500" x-text="review.role"></td>
+                                        <td class="px-6 py-4 align-top">
+                                            <div class="flex text-yellow-400">
+                                                <template x-for="i in 5">
+                                                    <svg class="w-4 h-4"
+                                                        :class="i <= review.rating ? 'fill-current' : 'text-gray-300 fill-current'"
+                                                        viewBox="0 0 20 20">
+                                                        <path
+                                                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                                    </svg>
+                                                </template>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 align-top text-gray-600 italic"
+                                            x-text="'&quot;' + review.text + '&quot;'"></td>
+                                        <td class="px-6 py-4 align-top text-right">
+                                            <button @click="deleteReview(review.id)"
+                                                class="text-red-600 hover:text-red-900 text-sm font-medium hover:underline">Delete</button>
+                                        </td>
+                                    </tr>
+                                </template>
+                                <tr x-show="reviews.length === 0">
+                                    <td colspan="5" class="px-6 py-12 text-center text-gray-500">No reviews found.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Customers (Chat) View -->
+            <div x-show="currentView === 'customers'" class="flex-1 overflow-y-auto p-8"
+                x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4"
+                x-transition:enter-end="opacity-100 translate-y-0">
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full">
+                    <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                        <h3 class="font-bold text-gray-800">Support Inquiries (Live Chat)</h3>
+                        <button @click="loadChats()" class="text-sm text-brand hover:underline">Refresh</button>
+                    </div>
+
+                    <div class="flex-1 overflow-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead
+                                class="bg-gray-100 text-gray-500 text-xs uppercase font-bold tracking-wider sticky top-0 z-10">
+                                <tr>
+                                    <th class="px-6 py-4 border-b border-gray-200">Customer</th>
+                                    <th class="px-6 py-4 border-b border-gray-200">Last Message</th>
+                                    <th class="px-6 py-4 border-b border-gray-200">Date</th>
+                                    <th class="px-6 py-4 border-b border-gray-200 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 text-sm bg-white">
+                                <template x-for="chat in chats" :key="chat.id">
+                                    <tr class="hover:bg-gray-50 transition-colors cursor-pointer"
+                                        @click="viewChat(chat)">
+                                        <td class="px-6 py-4 align-top">
+                                            <div class="font-bold text-gray-900" x-text="chat.customerName || 'Guest'">
+                                            </div>
+                                            <div class="text-xs text-gray-500"
+                                                x-text="chat.customerEmail || 'No email'"></div>
+                                        </td>
+                                        <td class="px-6 py-4 align-top">
+                                            <p class="text-gray-600 truncate max-w-xs" x-text="chat.lastMessage"></p>
+                                        </td>
+                                        <td class="px-6 py-4 align-top whitespace-nowrap text-gray-500"
+                                            x-text="formatDate(chat.lastUpdated)"></td>
+                                        <td class="px-6 py-4 align-top text-right">
+                                            <button @click.stop="viewChat(chat)"
+                                                class="text-brand hover:text-brand-dark font-medium text-sm mr-3">View
+                                                History</button>
+                                        </td>
+                                    </tr>
+                                </template>
+                                <tr x-show="chats.length === 0">
+                                    <td colspan="4" class="px-6 py-12 text-center text-gray-500">No active support chats
+                                        found.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Details Modal -->
+            <div x-show="selectedChat" class="fixed inset-0 z-50 overflow-y-auto" x-cloak style="display: none;">
+                <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                    <div class="fixed inset-0 transition-opacity" aria-hidden="true" @click="selectedChat = null">
+                        <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+                    </div>
+                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                    <div
+                        class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
+                        <template x-if="selectedChat">
+                            <div class="flex flex-col h-[500px]">
+                                <div
+                                    class="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+                                    <h3 class="text-lg leading-6 font-medium text-gray-900"
+                                        x-text="'Chat with ' + selectedChat.customerName"></h3>
+                                    <button @click="selectedChat = null" class="text-gray-400 hover:text-gray-500">
+                                        <svg class="h-6 w-6" fill="none" class="stroke-current" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div id="admin-chat-messages" class="flex-1 p-4 overflow-y-auto bg-gray-50 space-y-3">
+                                    <template x-for="(msg, index) in selectedChat.messages" :key="msg.id">
+                                        <div>
+                                            <!-- Date separator -->
+                                            <template
+                                                x-if="index === 0 || new Date(msg.timestamp || msg.id).toDateString() !== new Date(selectedChat.messages[index - 1].timestamp || selectedChat.messages[index - 1].id).toDateString()">
+                                                <div class="flex justify-center my-3">
+                                                    <span
+                                                        class="text-xs text-gray-500 bg-white px-3 py-1 rounded-full shadow-sm"
+                                                        x-text="new Date(msg.timestamp || msg.id).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })">
+                                                    </span>
+                                                </div>
+                                            </template>
+
+                                            <!-- Message bubble -->
+                                            <div class="flex" :class="msg.isUser ? 'justify-start' : 'justify-end'">
+                                                <div class="max-w-[80%] rounded-lg p-3 text-sm"
+                                                    :class="msg.isUser ? 'bg-white border border-gray-200 text-gray-800' : 'bg-brand text-white'">
+                                                    <p x-text="msg.text"></p>
+                                                    <p class="text-[10px] mt-1 opacity-70"
+                                                        x-text="new Date(msg.timestamp || msg.id).toLocaleTimeString()">
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                                <div class="bg-gray-50 px-4 py-3 border-t border-gray-200">
+                                    <div class="flex flex-col space-y-2">
+                                        <textarea x-model="adminReply"
+                                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-brand focus:ring focus:ring-brand focus:ring-opacity-50 text-sm p-2"
+                                            rows="2" placeholder="Type your reply..."></textarea>
+                                        <div class="flex justify-between space-x-3">
+                                            <button type="button"
+                                                class="inline-flex justify-center rounded-md border border-red-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-red-600 hover:bg-red-50 focus:outline-none sm:text-sm"
+                                                @click="deleteChat(selectedChat.id)">
+                                                Delete Chat
+                                            </button>
+                                            <div class="flex space-x-3">
+                                                <button type="button"
+                                                    class="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:text-sm"
+                                                    @click="selectedChat = null">
+                                                    Close
+                                                </button>
+                                                <button type="button"
+                                                    class="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-brand text-base font-medium text-white hover:bg-brand-hover focus:outline-none sm:text-sm"
+                                                    @click="sendAdminReply()">
+                                                    Send Reply
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        function dashboardApp() {
+            return {
+                currentView: 'dashboard', // dashboard, orders, reviews, customers
+                orders: [],
+                reviews: [],
+                chats: [],
+                searchQuery: '',
+                filterStatus: 'All',
+                selectedChat: null,
+                adminReply: '',
+
+                get viewTitle() {
+                    if (this.currentView === 'reviews') return 'Review Management';
+                    if (this.currentView === 'customers') return 'Customer Support';
+                    return this.currentView === 'dashboard' ? 'Overview' : 'All Orders';
+                },
+
+                init() {
+                    this.loadOrders();
+                    this.loadReviews();
+                    this.loadChats();
+
+                    // Poll for new messages every 2 seconds
+                    setInterval(() => {
+                        this.loadChats();
+                    }, 2000);
+                },
+
+                logout() {
+                    if (confirm("Are you sure you want to sign out?")) {
+                        localStorage.removeItem('mj_admin_session');
+                        window.location.href = 'admin-login.html';
+                    }
+                },
+
+                loadOrders() {
+                    const stored = localStorage.getItem('mj_orders');
+                    if (stored) {
+                        try {
+                            this.orders = JSON.parse(stored);
+                        } catch (e) { console.error('Error parsing orders', e); }
+                    }
+                },
+
+                loadReviews() {
+                    const stored = localStorage.getItem('mj_reviews');
+                    if (stored) {
+                        try {
+                            this.reviews = JSON.parse(stored);
+                        } catch (e) { console.error('Error parsing reviews', e); }
+                    }
+                },
+
+                loadChats() {
+                    const stored = localStorage.getItem('mj_support_chats');
+                    if (stored) {
+                        try {
+                            const chatsObj = JSON.parse(stored);
+                            const newChats = Object.values(chatsObj)
+                                .sort((a, b) => new Date(b.lastUpdated) - new Date(a.lastUpdated));
+
+                            this.chats = newChats;
+
+                            // If a chat is open, update it to show new messages
+                            if (this.selectedChat) {
+                                const updatedChat = this.chats.find(c => c.id === this.selectedChat.id);
+                                if (updatedChat) {
+                                    const oldMsgCount = this.selectedChat.messages.length;
+                                    this.selectedChat = updatedChat;
+
+                                    // Scroll only if new messages arrived
+                                    if (updatedChat.messages.length > oldMsgCount) {
+                                        this.scrollToBottom();
+                                    }
+                                }
+                            }
+                        } catch (e) { console.error('Error parsing chats', e); }
+                    } else {
+                        this.chats = [];
+                    }
+                },
+
+                viewChat(chat) {
+                    this.selectedChat = chat;
+                    this.adminReply = ''; // Reset reply field
+                    this.scrollToBottom();
+                },
+
+                sendAdminReply() {
+                    if (!this.selectedChat || !this.adminReply.trim()) return;
+
+                    const msg = {
+                        id: Date.now(),
+                        text: this.adminReply.trim(),
+                        isUser: false, // Admin is not the "User" (Customer)
+                        timestamp: new Date().toISOString()
+                    };
+
+                    // Update local state
+                    this.selectedChat.messages.push(msg);
+                    this.selectedChat.lastMessage = "Admin: " + msg.text;
+                    this.selectedChat.lastUpdated = msg.timestamp;
+
+                    // Update the main chats list
+                    const chatIndex = this.chats.findIndex(c => c.id === this.selectedChat.id);
+                    if (chatIndex !== -1) {
+                        this.chats[chatIndex] = this.selectedChat;
+                    }
+
+                    // Save to storage
+                    this.saveChats();
+                    this.adminReply = ''; // Clear input
+                    this.scrollToBottom();
+                },
+
+                scrollToBottom() {
+                    this.$nextTick(() => {
+                        const container = document.getElementById('admin-chat-messages');
+                        if (container) {
+                            container.scrollTop = container.scrollHeight;
+                        }
+                    });
+                },
+
+                deleteChat(chatId) {
+                    if (!confirm("Are you sure you want to delete this chat conversation? This cannot be undone.")) return;
+
+                    // Remove from array
+                    this.chats = this.chats.filter(c => c.id !== chatId);
+
+                    // Close modal
+                    this.selectedChat = null;
+
+                    // Save to storage
+                    this.saveChats();
+                },
+
+                saveChats() {
+                    const chatsObj = {};
+                    this.chats.forEach(chat => {
+                        chatsObj[chat.id] = chat;
+                    });
+                    localStorage.setItem('mj_support_chats', JSON.stringify(chatsObj));
+                },
+
+                deleteReview(id) {
+                    if (confirm("Are you sure you want to delete this review?")) {
+                        this.reviews = this.reviews.filter(r => r.id !== id);
+                        this.saveReviews();
+                    }
+                },
+
+                saveReviews() {
+                    localStorage.setItem('mj_reviews', JSON.stringify(this.reviews));
+                },
+
+                updateStatus(id, newStatus) {
+                    const order = this.orders.find(o => o.id === id);
+                    if (order) {
+                        order.status = newStatus;
+                        this.saveOrders();
+                    }
+                },
+
+                deleteOrder(id) {
+                    if (confirm("Are you sure you want to delete this order? This cannot be undone.")) {
+                        this.orders = this.orders.filter(o => o.id !== id);
+                        this.saveOrders();
+                    }
+                },
+
+                uploadProof(event, id) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const order = this.orders.find(o => o.id === id);
+                        if (order) {
+                            order.proof = e.target.result; // Store Base64 string
+                            this.saveOrders();
+                            alert("Proof of delivery uploaded!");
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                },
+
+                saveOrders() {
+                    localStorage.setItem('mj_orders', JSON.stringify(this.orders));
+                },
+
+                formatDate(isoString) {
+                    if (!isoString) return '';
+                    return new Date(isoString).toLocaleDateString('en-US', {
+                        month: 'short', day: 'numeric', year: 'numeric'
+                    });
+                },
+
+                // Getters for Computed Properties
+                get pendingCount() {
+                    return this.orders.filter(o => o.status === 'Pending').length;
+                },
+
+                get activeOrdersCount() {
+                    return this.orders.filter(o => o.status === 'Processing' || o.status === 'Ready').length;
+                },
+
+                get totalRevenue() {
+                    return this.orders.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+                },
+
+                get recentOrders() {
+                    return [...this.orders]
+                        .sort((a, b) => new Date(b.date) - new Date(a.date))
+                        .slice(0, 5);
+                },
+
+                get filteredOrders() {
+                    let filtered = this.orders;
+                    if (this.searchQuery) {
+                        const q = this.searchQuery.toLowerCase();
+                        filtered = filtered.filter(o =>
+                            o.id.toString().includes(q) ||
+                            o.customer.toLowerCase().includes(q) ||
+                            o.email.toLowerCase().includes(q)
+                        );
+                    }
+                    if (this.filterStatus !== 'All') {
+                        filtered = filtered.filter(o => o.status === this.filterStatus);
+                    }
+                    return filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+                },
+
+                getStatusClass(status) {
+                    switch (status) {
+                        case 'Pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+                        case 'Processing': return 'bg-blue-100 text-blue-800 border-blue-200';
+                        case 'Ready for Pickup': return 'bg-purple-100 text-purple-800 border-purple-200';
+                        case 'Out for Delivery': return 'bg-purple-100 text-purple-800 border-purple-200';
+                        case 'Completed': return 'bg-green-100 text-green-800 border-green-200';
+                        default: return 'bg-gray-100 text-gray-800 border-gray-200';
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
