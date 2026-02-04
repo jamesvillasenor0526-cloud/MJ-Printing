@@ -49,15 +49,27 @@ document.addEventListener('alpine:init', () => {
             return this.items.reduce((sum, item) => sum + item.quantity, 0);
         },
 
-        get total() {
+        get subtotal() {
             // Assuming price is a number. If it's a string like "₱450.00", we need to parse it.
-            // But for the quote system, maybe we just sum the estimated prices if available.
             return this.items.reduce((sum, item) => {
                 const price = typeof item.price === 'string'
                     ? parseFloat(item.price.replace(/[^0-9.]/g, ''))
                     : item.price;
                 return sum + (price * item.quantity);
             }, 0);
+        },
+
+        get shipping() {
+            // Flat rate shipping of 20
+            return this.items.length > 0 ? 20 : 0;
+        },
+
+        get total() {
+            return this.subtotal + this.shipping;
+        },
+
+        get formattedSubtotal() {
+            return '₱' + this.subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         },
 
         get formattedTotal() {

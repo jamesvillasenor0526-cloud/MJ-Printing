@@ -178,12 +178,20 @@
                         </div>
                         <p class="text-3xl font-extrabold text-gray-900"
                             x-text="'₱' + totalRevenue.toLocaleString('en-US', {minimumFractionDigits: 2})">₱0.00</p>
-                        <p class="text-sm text-green-600 mt-2 flex items-center font-medium">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <p class="text-sm mt-2 flex items-center font-medium"
+                            :class="revenueGrowth >= 0 ? 'text-green-600' : 'text-red-600'">
+                            <svg x-show="revenueGrowth >= 0" class="w-4 h-4 mr-1" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
                             </svg>
-                            +12.5% <span class="text-gray-400 ml-1 font-normal">from last month</span>
+                            <svg x-show="revenueGrowth < 0" class="w-4 h-4 mr-1" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24" style="display: none;">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path>
+                            </svg>
+                            <span x-text="(revenueGrowth >= 0 ? '+' : '') + revenueGrowth + '%'">+0.0%</span>
+                            <span class="text-gray-400 ml-1 font-normal">from last month</span>
                         </p>
                     </div>
 
@@ -288,14 +296,23 @@
                         </div>
 
                         <div class="flex space-x-2">
-                            <select x-model="filterStatus"
-                                class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand">
-                                <option value="All">All Status</option>
-                                <option value="Pending">Pending</option>
-                                <option value="Processing">Processing</option>
-                                <option value="Ready">Ready</option>
-                                <option value="Completed">Completed</option>
-                            </select>
+                            <div class="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+                                <button @click="filterStatus = 'Active'"
+                                    :class="filterStatus === 'Active' ? 'bg-white shadow text-brand font-bold' : 'text-gray-500 hover:text-gray-700'"
+                                    class="px-4 py-2 text-sm font-medium rounded-md transition-all focus:outline-none">
+                                    Active
+                                </button>
+                                <button @click="filterStatus = 'Completed'"
+                                    :class="filterStatus === 'Completed' ? 'bg-white shadow text-green-700 font-bold' : 'text-gray-500 hover:text-gray-700'"
+                                    class="px-4 py-2 text-sm font-medium rounded-md transition-all focus:outline-none">
+                                    Completed
+                                </button>
+                                <button @click="filterStatus = 'Cancelled'"
+                                    :class="filterStatus === 'Cancelled' ? 'bg-white shadow text-red-700 font-bold' : 'text-gray-500 hover:text-gray-700'"
+                                    class="px-4 py-2 text-sm font-medium rounded-md transition-all focus:outline-none">
+                                    Cancelled
+                                </button>
+                            </div>
 
                         </div>
                     </div>
@@ -327,32 +344,65 @@
                                             <div class="text-gray-500 text-xs mt-0.5" x-text="order.email"></div>
                                             <div class="text-gray-400 text-xs mt-0.5"
                                                 x-text="order.phone || 'No phone'"></div>
+                                            <div class="text-gray-400 text-xs mt-0.5"
+                                                x-show="order.address && order.address !== 'N/A'">
+                                                <span class="font-medium">Map-marker:</span> <span
+                                                    x-text="order.address"></span>
+                                            </div>
                                         </td>
                                         <td class="px-6 py-4 align-top">
-                                            <ul class="space-y-1">
+                                            <ul class="space-y-2">
                                                 <template x-for="item in order.items">
-                                                    <li class="text-gray-600 flex items-start">
-                                                        <span
-                                                            class="text-xs bg-gray-100 border border-gray-200 rounded px-1.5 py-0.5 mr-2 font-mono"
-                                                            x-text="'x' + item.quantity"></span>
-                                                        <span class="truncate max-w-xs"
-                                                            x-text="item.name + (item.details ? ' (' + item.details + ')' : '')"></span>
+                                                    <li class="text-gray-600 flex items-start gap-3">
+                                                        <!-- Show image preview if available -->
+                                                        <template x-if="item.imagePreview">
+                                                            <img :src="item.imagePreview"
+                                                                @click="lightboxImage = item.imagePreview"
+                                                                class="w-12 h-12 object-cover rounded border border-gray-200 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity">
+                                                        </template>
+                                                        <template x-if="!item.imagePreview">
+                                                            <div
+                                                                class="w-12 h-12 bg-gray-100 rounded flex items-center justify-center flex-shrink-0">
+                                                                <svg class="w-6 h-6 text-gray-400" fill="none"
+                                                                    stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                                        stroke-width="2"
+                                                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                                                    </path>
+                                                                </svg>
+                                                            </div>
+                                                        </template>
+                                                        <div class="flex-1 min-w-0">
+                                                            <div class="flex items-center gap-2">
+                                                                <span
+                                                                    class="text-xs bg-gray-100 border border-gray-200 rounded px-1.5 py-0.5 font-mono"
+                                                                    x-text="'x' + item.quantity"></span>
+                                                                <span class="font-medium text-gray-900"
+                                                                    x-text="item.name"></span>
+                                                            </div>
+                                                            <p class="text-xs text-gray-500 mt-0.5"
+                                                                x-text="item.details"></p>
+
+                                                        </div>
                                                     </li>
                                                 </template>
                                             </ul>
-                                            <div x-show="order.items.some(i => i.file)" class="mt-2">
-                                                <span
-                                                    class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                                    <svg class="mr-1.5 h-2 w-2 text-blue-400" fill="currentColor"
-                                                        viewBox="0 0 8 8">
-                                                        <circle cx="4" cy="4" r="3" />
-                                                    </svg>
-                                                    Files Attached
-                                                </span>
-                                            </div>
+
                                         </td>
-                                        <td class="px-6 py-4 align-top font-bold text-gray-900 font-mono tracking-tight"
-                                            x-text="'₱' + order.total.toLocaleString('en-US', {minimumFractionDigits: 2})">
+                                        <td class="px-6 py-4 align-top">
+                                            <div class="font-bold text-gray-900 font-mono tracking-tight"
+                                                x-text="'₱' + order.total.toLocaleString('en-US', {minimumFractionDigits: 2})">
+                                            </div>
+                                            <div class="text-xs text-gray-500 mt-1">
+                                                <div
+                                                    x-text="'Items: ₱' + calculateSubtotal(order.items).toLocaleString('en-US', {minimumFractionDigits: 2})">
+                                                </div>
+                                                <template x-if="order.total > calculateSubtotal(order.items)">
+                                                    <div class="text-gray-400"
+                                                        x-text="'Ship: ₱' + (order.total - calculateSubtotal(order.items)).toLocaleString('en-US', {minimumFractionDigits: 2})">
+                                                    </div>
+                                                </template>
+                                            </div>
                                         </td>
                                         <td class="px-6 py-4 align-top">
                                             <span
@@ -360,9 +410,16 @@
                                                 :class="getStatusClass(order.status)" x-text="order.status"></span>
                                         </td>
                                         <td class="px-6 py-4 align-top text-right">
-                                            <div class="relative inline-block text-left" x-data="{ open: false }">
-                                                <button @click="open = !open" @click.outside="open = false"
-                                                    class="text-gray-400 hover:text-brand bg-white hover:bg-gray-100 rounded-full p-2 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand">
+                                            <div class="relative inline-block text-left" x-data="{ open: false }"
+                                                x-show="!['Completed', 'Cancelled'].includes(order.status)">
+                                                <!-- Disabled for cancelled and completed orders -->
+                                                <button
+                                                    @click="order.status !== 'Cancelled' && order.status !== 'Completed' ? open = !open : null"
+                                                    @click.outside="open = false"
+                                                    :disabled="order.status === 'Cancelled' || order.status === 'Completed'"
+                                                    :class="(order.status === 'Cancelled' || order.status === 'Completed') ? 'cursor-not-allowed opacity-40' : 'hover:text-brand hover:bg-gray-100'"
+                                                    :title="order.status === 'Cancelled' ? 'Cannot change status of cancelled orders' : order.status === 'Completed' ? 'Cannot change status of completed orders' : 'Change status'"
+                                                    class="text-gray-400 bg-white rounded-full p-2 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand">
                                                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                                                         stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -660,6 +717,29 @@
             </div>
 
         </main>
+
+        <!-- Full-Screen Image Lightbox Modal -->
+        <div x-show="lightboxImage" @click="lightboxImage = null" x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4"
+            style="display: none;">
+            <!-- Close button -->
+            <button @click.stop="lightboxImage = null"
+                class="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors z-10">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+
+            <!-- Image container -->
+            <div @click.stop class="relative max-w-7xl max-h-full">
+                <img :src="lightboxImage" class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                    alt="Full size preview">
+            </div>
+        </div>
     </div>
 
     <script>
@@ -670,9 +750,10 @@
                 reviews: [],
                 chats: [],
                 searchQuery: '',
-                filterStatus: 'All',
+                filterStatus: 'Active',
                 selectedChat: null,
                 adminReply: '',
+                lightboxImage: null, // For full-screen image viewer
 
                 get viewTitle() {
                     if (this.currentView === 'reviews') return 'Review Management';
@@ -698,11 +779,21 @@
                     }
                 },
 
+                calculateSubtotal(items) {
+                    if (!items) return 0;
+                    return items.reduce((sum, item) => {
+                        const price = typeof item.price === 'string'
+                            ? parseFloat(item.price.replace(/[^0-9.]/g, ''))
+                            : item.price;
+                        return sum + (price * item.quantity);
+                    }, 0);
+                },
+
                 loadOrders() {
                     const stored = localStorage.getItem('mj_orders');
                     if (stored) {
                         try {
-                            this.orders = JSON.parse(stored);
+                            this.orders = JSON.parse(stored).sort((a, b) => new Date(b.date) - new Date(a.date));
                         } catch (e) { console.error('Error parsing orders', e); }
                     }
                 },
@@ -874,6 +965,34 @@
                     return this.orders.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
                 },
 
+                get revenueGrowth() {
+                    const now = new Date();
+                    const currentMonth = now.getMonth();
+                    const currentYear = now.getFullYear();
+
+                    // Calculate current month revenue
+                    const currentMonthRevenue = this.orders
+                        .filter(order => {
+                            const orderDate = new Date(order.date);
+                            return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
+                        })
+                        .reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+
+                    // Calculate last month revenue
+                    const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+                    const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+                    const lastMonthRevenue = this.orders
+                        .filter(order => {
+                            const orderDate = new Date(order.date);
+                            return orderDate.getMonth() === lastMonth && orderDate.getFullYear() === lastMonthYear;
+                        })
+                        .reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+
+                    // Calculate percentage growth
+                    if (lastMonthRevenue === 0) return currentMonthRevenue > 0 ? 100 : 0;
+                    return ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue * 100).toFixed(1);
+                },
+
                 get recentOrders() {
                     return [...this.orders]
                         .sort((a, b) => new Date(b.date) - new Date(a.date))
@@ -890,9 +1009,19 @@
                             o.email.toLowerCase().includes(q)
                         );
                     }
-                    if (this.filterStatus !== 'All') {
+
+                    if (this.filterStatus === 'Active') {
+                        // Show all active orders (Pending, Processing, Ready, etc)
+                        filtered = filtered.filter(o => !['Completed', 'Cancelled'].includes(o.status));
+                    } else if (this.filterStatus === 'Completed') {
+                        filtered = filtered.filter(o => o.status === 'Completed');
+                    } else if (this.filterStatus === 'Cancelled') {
+                        filtered = filtered.filter(o => o.status === 'Cancelled');
+                    } else if (this.filterStatus !== 'All') {
+                        // Fallback for legacy specific status selection if needed
                         filtered = filtered.filter(o => o.status === this.filterStatus);
                     }
+
                     return filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
                 },
 

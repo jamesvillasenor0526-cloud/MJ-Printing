@@ -194,7 +194,7 @@
                     name: this.productType,
                     details: `Size: ${this.size}, Color: ${this.color === 'Other' ? (this.customColor || 'Unspecified') : this.color}`,
                     file: this.fileName,
-                    // Note: Not storing imagePreview in cart to avoid localStorage quota limits
+                    imagePreview: this.imagePreview, // Add image preview
                     price: this.prices[this.productType],
                     quantity: this.quantity
                 });

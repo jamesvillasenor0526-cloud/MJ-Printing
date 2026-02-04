@@ -191,6 +191,7 @@
                     name: 'Document Printing',
                     details: `${this.paperSize}, ${this.colorMode}${this.notes ? ', Note: ' + this.notes : ''}`,
                     file: this.fileName,
+                    imagePreview: this.imagePreview, // Add image data
                     price: this.price / this.copies, 
                     quantity: this.copies
                 });

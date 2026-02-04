@@ -187,23 +187,14 @@
                         triggerLogin();
                         return;
                     }
-
-                    const q = this.query.toLowerCase();
-                    if (q.includes('flyer') || q.includes('paper') || q.includes('document') || q.includes('xerox') || q.includes('print')) {
-                        window.location.href = 'document.html';
-                    } else if (q.includes('tarp') || q.includes('banner') || q.includes('sign') || q.includes('large') || q.includes('sticker')) {
-                        window.location.href = 'large.html';
-                    } else if (q.includes('shirt') || q.includes('mug') || q.includes('lace') || q.includes('id') || q.includes('keychain')) {
-                        window.location.href = 'merchandise.html';
-                    } else if (q.includes('photo') || q.includes('picture') || q.includes('image') || q.includes('develop')) {
-                        window.location.href = 'photo.html';
-                    } else {
-                        alert('No exact match found. Please browse our categories below!');
+                    
+                    if (this.query.trim()) {
+                        window.location.href = 'search.html?q=' + encodeURIComponent(this.query);
                     }
                 }
             }">
                 <div class="relative w-full max-w-md">
-                    <input type="text" placeholder="I need 100 flyers..." x-model="query" @keydown.enter="search"
+                    <input type="text" placeholder="Search for products..." x-model="query" @keydown.enter="search"
                         class="w-full px-5 py-4 border border-gray-300 rounded-full shadow-sm focus:ring-2 focus:ring-brand focus:border-brand outline-none text-base sm:text-lg">
                     <button @click="search"
                         class="absolute right-2 top-2 bottom-2 bg-brand text-white px-4 sm:px-6 rounded-full font-medium hover:bg-brand-hover transition-colors text-sm sm:text-base">

@@ -226,10 +226,17 @@
                         <template x-for="item in order.items" :key="item.id">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center">
-                                    <div
-                                        class="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-500 text-xs text-center p-1">
-                                        <span x-text="item.name.substring(0, 10) + '...'"></span>
-                                    </div>
+                                    <!-- Show uploaded image if available, otherwise show generic box -->
+                                    <template x-if="item.imagePreview">
+                                        <img :src="item.imagePreview"
+                                            class="h-16 w-16 object-cover rounded-lg border border-gray-200">
+                                    </template>
+                                    <template x-if="!item.imagePreview">
+                                        <div
+                                            class="h-16 w-16 bg-gray-100 rounded-lg flex items-center justify-center text-gray-500 text-xs text-center p-1">
+                                            <span x-text="item.name.substring(0, 10) + '...'"></span>
+                                        </div>
+                                    </template>
                                     <div class="ml-4">
                                         <p class="text-sm font-bold text-gray-900" x-text="item.name"></p>
                                         <p class="text-xs text-brand" x-text="item.file ? 'File: ' + item.file : ''">
@@ -240,10 +247,32 @@
                             </div>
                         </template>
                     </div>
-                    <div class="mt-6 flex justify-between items-center pt-6 border-t border-gray-100">
-                        <span class="font-bold text-gray-900">Total Amount</span>
-                        <span class="text-xl font-extrabold text-brand"
-                            x-text="'₱' + (order.total || 0).toLocaleString()"></span>
+                    <div class="mt-6 pt-6 border-t border-gray-100 space-y-2">
+                        <div class="flex justify-between items-center text-gray-600 font-medium">
+                            <span>Subtotal</span>
+                            <span
+                                x-text="'₱' + calculateSubtotal(order.items).toLocaleString('en-US', {minimumFractionDigits: 2})"></span>
+                        </div>
+                        <template x-if="order.total > calculateSubtotal(order.items)">
+                            <div class="flex justify-between items-center text-gray-600 font-medium">
+                                <span>Shipping Fee</span>
+                                <span
+                                    x-text="'₱' + (order.total - calculateSubtotal(order.items)).toLocaleString('en-US', {minimumFractionDigits: 2})"></span>
+                            </div>
+                        </template>
+                        <div class="flex justify-between items-center pt-2 border-t border-gray-50 mt-2">
+                            <span class="font-bold text-gray-900 text-lg">Total Amount</span>
+                            <span class="text-xl font-extrabold text-brand"
+                                x-text="'₱' + (order.total || 0).toLocaleString('en-US', {minimumFractionDigits: 2})"></span>
+                        </div>
+                    </div>
+
+                    <!-- Cancel Order Button (Only for Pending Orders) -->
+                    <div x-show="order.status === 'Pending'" class="mt-6">
+                        <button @click="cancelOrder"
+                            class="w-full px-4 py-3 bg-red-50 border border-red-300 text-red-700 font-semibold rounded-lg hover:bg-red-100 transition-colors">
+                            Cancel Order
+                        </button>
                     </div>
                 </div>
 
@@ -284,6 +313,16 @@
                     }
                 },
 
+                calculateSubtotal(items) {
+                    if (!items) return 0;
+                    return items.reduce((sum, item) => {
+                        const price = typeof item.price === 'string'
+                            ? parseFloat(item.price.replace(/[^0-9.]/g, ''))
+                            : item.price;
+                        return sum + (price * item.quantity);
+                    }, 0);
+                },
+
                 trackOrder() {
                     this.error = '';
                     this.order = null;
@@ -318,6 +357,24 @@
                         orders[index].status = 'Completed';
                         localStorage.setItem('mj_orders', JSON.stringify(orders));
                     }
+                },
+
+                cancelOrder() {
+                    if (!this.order) return;
+                    if (!confirm("Are you sure you want to cancel this order? This action cannot be undone.")) return;
+
+                    // Update local state
+                    this.order.status = 'Cancelled';
+
+                    // Update Storage
+                    const orders = JSON.parse(localStorage.getItem('mj_orders') || '[]');
+                    const index = orders.findIndex(o => o.id === this.order.id);
+                    if (index !== -1) {
+                        orders[index].status = 'Cancelled';
+                        localStorage.setItem('mj_orders', JSON.stringify(orders));
+                    }
+
+                    alert('Order has been cancelled successfully.');
                 },
 
                 formatDate(dateString) {

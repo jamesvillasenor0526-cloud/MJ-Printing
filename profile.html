@@ -74,9 +74,11 @@
                     </div>
                     <hr class="my-6 border-gray-100">
                     <nav class="space-y-2">
-                        <a href="#" class="block px-4 py-2 bg-brand-light text-brand font-bold rounded-md">Order
+                        <a @click.prevent="currentView = 'orders'"
+                            :class="currentView === 'orders' ? 'block px-4 py-2 bg-brand-light text-brand font-bold rounded-md' : 'block px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-md cursor-pointer'">Order
                             History</a>
-                        <a href="#" class="block px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-md">Account
+                        <a @click.prevent="currentView = 'settings'"
+                            :class="currentView === 'settings' ? 'block px-4 py-2 bg-brand-light text-brand font-bold rounded-md' : 'block px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-md cursor-pointer'">Account
                             Settings</a>
                     </nav>
                 </div>
@@ -84,20 +86,42 @@
 
             <!-- Content -->
             <div class="flex-1">
-                <div class="bg-white rounded-lg shadow overflow-hidden">
+                <!-- Orders View -->
+                <div x-show="currentView === 'orders'" class="bg-white rounded-lg shadow overflow-hidden">
                     <div class="px-6 py-4 border-b border-gray-100">
-                        <h3 class="text-lg font-bold text-gray-900">Your Orders</h3>
+                        <h3 class="text-lg font-bold text-gray-900 mb-4">Your Orders</h3>
+                        <!-- Order Filter Tabs -->
+                        <div class="flex space-x-1 border-b border-gray-200">
+                            <button @click="orderFilter = 'active'"
+                                :class="orderFilter === 'active' ? 'border-b-2 border-brand text-brand font-semibold' : 'text-gray-500 hover:text-gray-700'"
+                                class="px-4 py-2 text-sm transition-colors">
+                                Active (<span x-text="activeOrders.length"></span>)
+                            </button>
+                            <button @click="orderFilter = 'completed'"
+                                :class="orderFilter === 'completed' ? 'border-b-2 border-brand text-brand font-semibold' : 'text-gray-500 hover:text-gray-700'"
+                                class="px-4 py-2 text-sm transition-colors">
+                                Completed (<span x-text="completedOrders.length"></span>)
+                            </button>
+                            <button @click="orderFilter = 'cancelled'"
+                                :class="orderFilter === 'cancelled' ? 'border-b-2 border-brand text-brand font-semibold' : 'text-gray-500 hover:text-gray-700'"
+                                class="px-4 py-2 text-sm transition-colors">
+                                Cancelled (<span x-text="cancelledOrders.length"></span>)
+                            </button>
+                        </div>
                     </div>
 
-                    <div x-show="myOrders.length === 0" class="p-8 text-center" x-cloak>
+                    <div x-show="filteredOrders.length === 0" class="p-8 text-center" x-cloak>
                         <svg class="mx-auto h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                         </svg>
-                        <h3 class="mt-2 text-sm font-medium text-gray-900">No orders yet</h3>
-                        <p class="mt-1 text-sm text-gray-500">Start by creating a new design quote.</p>
-                        <div class="mt-6">
+                        <h3 class="mt-2 text-sm font-medium text-gray-900"
+                            x-text="orderFilter === 'active' ? 'No active orders' : orderFilter === 'completed' ? 'No completed orders' : 'No cancelled orders'">
+                        </h3>
+                        <p class="mt-1 text-sm text-gray-500" x-show="orderFilter === 'active'">Start by creating a new
+                            design quote.</p>
+                        <div class="mt-6" x-show="orderFilter === 'active'">
                             <a href="index.html"
                                 class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-brand hover:bg-brand-hover focus:outline-none">
                                 Browse Products
@@ -105,8 +129,8 @@
                         </div>
                     </div>
 
-                    <ul x-show="myOrders.length > 0" class="divide-y divide-gray-100" x-cloak>
-                        <template x-for="order in myOrders" :key="order.id">
+                    <ul x-show="filteredOrders.length > 0" class="divide-y divide-gray-100" x-cloak>
+                        <template x-for="order in filteredOrders" :key="order.id">
                             <li class="p-6 hover:bg-gray-50">
                                 <div class="flex items-center justify-between">
                                     <div class="flex-1">
@@ -134,21 +158,132 @@
                                                         'bg-yellow-100 text-yellow-800': order.status === 'Pending',
                                                         'bg-blue-100 text-blue-800': order.status === 'Processing',
                                                         'bg-green-100 text-green-800': order.status === 'Ready',
-                                                        'bg-gray-100 text-gray-800': order.status === 'Completed'
+                                                        'bg-gray-100 text-gray-800': order.status === 'Completed',
+                                                        'bg-red-100 text-red-800': order.status === 'Cancelled'
                                                     }" x-text="order.status">
                                                 </span>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="ml-5 flex-shrink-0">
-                                        <a :href="'track.html?ref=' + order.id"
-                                            class="font-medium text-brand hover:text-brand-hover">Track
-                                            &rarr;</a>
+                                    <div class="ml-5 flex-shrink-0 flex items-center gap-3">
+                                        <template x-if="order.status === 'Pending'">
+                                            <button @click="cancelOrder(order.id)"
+                                                class="text-sm font-medium text-red-600 hover:text-red-800 underline">
+                                                Cancel
+                                            </button>
+                                        </template>
+                                        <template x-if="order.status !== 'Cancelled'">
+                                            <a :href="'track.html?ref=' + order.id"
+                                                class="font-medium text-brand hover:text-brand-hover">Track
+                                                &rarr;</a>
+                                        </template>
                                     </div>
                                 </div>
                             </li>
                         </template>
                     </ul>
+                </div>
+
+                <!-- Account Settings View -->
+                <div x-show="currentView === 'settings'" class="bg-white rounded-lg shadow overflow-hidden"
+                    style="display: none;">
+                    <div class="px-6 py-4 border-b border-gray-100">
+                        <h3 class="text-lg font-bold text-gray-900">Account Settings</h3>
+                    </div>
+
+                    <div class="p-6">
+                        <!-- Profile Information -->
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                                <template x-if="!editMode">
+                                    <p class="text-gray-900" x-text="user.name">Loading...</p>
+                                </template>
+                                <template x-if="editMode">
+                                    <input type="text" x-model="editForm.name"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand">
+                                </template>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                                <template x-if="!editMode">
+                                    <p class="text-gray-900" x-text="user.email">Loading...</p>
+                                </template>
+                                <template x-if="editMode">
+                                    <input type="email" x-model="editForm.email"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand">
+                                </template>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                                <template x-if="!editMode">
+                                    <p class="text-gray-900" x-text="user.phone || 'Not provided'">Loading...</p>
+                                </template>
+                                <template x-if="editMode">
+                                    <input type="tel" x-model="editForm.phone"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand"
+                                        placeholder="Optional">
+                                </template>
+                            </div>
+
+                            <!-- Password Change Section (Only in Edit Mode) -->
+                            <template x-if="editMode">
+                                <div class="mt-6 pt-6 border-t border-gray-100">
+                                    <h4 class="text-md font-semibold text-gray-900 mb-4">Change Password (Optional)</h4>
+
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Current
+                                                Password</label>
+                                            <input type="password" x-model="passwordForm.current"
+                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand"
+                                                placeholder="Enter current password to change">
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">New
+                                                Password</label>
+                                            <input type="password" x-model="passwordForm.new"
+                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand"
+                                                placeholder="Leave blank to keep current">
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">Confirm New
+                                                Password</label>
+                                            <input type="password" x-model="passwordForm.confirm"
+                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand focus:border-brand"
+                                                placeholder="Confirm new password">
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- Action Buttons -->
+                            <div class="flex gap-3 pt-4">
+                                <template x-if="!editMode">
+                                    <button @click="startEdit"
+                                        class="px-6 py-2 bg-brand text-white font-semibold rounded-lg hover:bg-brand-hover transition-colors">
+                                        Edit Profile
+                                    </button>
+                                </template>
+                                <template x-if="editMode">
+                                    <div class="flex gap-3">
+                                        <button @click="saveProfile"
+                                            class="px-6 py-2 bg-brand text-white font-semibold rounded-lg hover:bg-brand-hover transition-colors">
+                                            Save Changes
+                                        </button>
+                                        <button @click="cancelEdit"
+                                            class="px-6 py-2 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors">
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -159,6 +294,35 @@
             return {
                 user: {},
                 myOrders: [],
+                orderFilter: 'active', // active, completed, cancelled
+                currentView: 'orders', // orders, settings
+                editMode: false,
+                editForm: {
+                    name: '',
+                    email: '',
+                    phone: ''
+                },
+                passwordForm: {
+                    current: '',
+                    new: '',
+                    confirm: ''
+                },
+
+                get activeOrders() {
+                    return this.myOrders.filter(o => o.status !== 'Completed' && o.status !== 'Cancelled');
+                },
+                get completedOrders() {
+                    return this.myOrders.filter(o => o.status === 'Completed');
+                },
+                get cancelledOrders() {
+                    return this.myOrders.filter(o => o.status === 'Cancelled');
+                },
+                get filteredOrders() {
+                    if (this.orderFilter === 'active') return this.activeOrders;
+                    if (this.orderFilter === 'completed') return this.completedOrders;
+                    if (this.orderFilter === 'cancelled') return this.cancelledOrders;
+                    return this.myOrders;
+                },
 
                 init() {
                     const session = localStorage.getItem('mj_session');
@@ -171,12 +335,156 @@
                     // Load orders from global order store and filter by this user's email
                     // Note: This matches the 'admin/dashboard.html' logic which saves to 'mj_orders'
                     const allOrders = JSON.parse(localStorage.getItem('mj_orders') || '[]');
-                    this.myOrders = allOrders.filter(o => o.email === this.user.email);
+                    this.myOrders = allOrders.filter(o => o.email === this.user.email).sort((a, b) => new Date(b.date) - new Date(a.date));
                 },
 
                 logout() {
                     localStorage.removeItem('mj_session');
                     window.location.href = 'index.html';
+                },
+
+                cancelOrder(orderId) {
+                    if (!confirm('Are you sure you want to cancel this order?')) {
+                        return;
+                    }
+
+                    // Load all orders
+                    const allOrders = JSON.parse(localStorage.getItem('mj_orders') || '[]');
+
+                    // Find and update the order status to 'Cancelled'
+                    const orderIndex = allOrders.findIndex(o => o.id === orderId);
+                    if (orderIndex !== -1) {
+                        allOrders[orderIndex].status = 'Cancelled';
+
+                        // Save back to localStorage
+                        localStorage.setItem('mj_orders', JSON.stringify(allOrders));
+
+                        // Reload user's orders
+                        this.myOrders = allOrders.filter(o => o.email === this.user.email).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                        alert('Order cancelled successfully.');
+                    }
+                },
+
+                startEdit() {
+                    // Populate edit form with current values
+                    this.editForm.name = this.user.name;
+                    this.editForm.email = this.user.email;
+                    this.editForm.phone = this.user.phone || '';
+                    this.editMode = true;
+                },
+
+                cancelEdit() {
+                    this.editMode = false;
+                    // Reset form
+                    this.editForm = {
+                        name: '',
+                        email: '',
+                        phone: ''
+                    };
+                },
+
+                saveProfile() {
+                    // Validate inputs
+                    if (!this.editForm.name.trim() || !this.editForm.email.trim()) {
+                        alert('Name and email are required.');
+                        return;
+                    }
+
+                    const oldEmail = this.user.email; // Store old email for lookup
+                    let passwordChanged = false;
+
+                    // Handle Password Change if requested
+                    if (this.passwordForm.new) {
+                        if (!this.passwordForm.current) {
+                            alert('Please enter your current password to change it.');
+                            return;
+                        }
+                        if (this.passwordForm.new !== this.passwordForm.confirm) {
+                            alert('New passwords do not match.');
+                            return;
+                        }
+                        if (this.passwordForm.new.length < 6) {
+                            alert('Password must be at least 6 characters long.');
+                            return;
+                        }
+
+                        // Verify current password
+                        let users = JSON.parse(localStorage.getItem('mj_users') || '[]');
+                        const currentUser = users.find(u => u.email === oldEmail);
+
+                        if (!currentUser || currentUser.password !== this.passwordForm.current) {
+                            alert('Current password is incorrect.');
+                            return;
+                        }
+
+                        passwordChanged = true;
+                    }
+
+                    // Update user object
+                    this.user.name = this.editForm.name.trim();
+                    this.user.email = this.editForm.email.trim();
+                    this.user.phone = this.editForm.phone.trim();
+                    if (passwordChanged) {
+                        this.user.password = this.passwordForm.new;
+                    }
+
+                    // Update in mj_users database
+                    let users = JSON.parse(localStorage.getItem('mj_users') || '[]');
+                    const userIndex = users.findIndex(u => u.email === oldEmail);
+                    if (userIndex !== -1) {
+                        users[userIndex].name = this.user.name;
+                        users[userIndex].email = this.user.email;
+                        if (passwordChanged) {
+                            users[userIndex].password = this.passwordForm.new;
+                        }
+                        localStorage.setItem('mj_users', JSON.stringify(users));
+                    }
+
+                    // Sync Chat History (Name & Email)
+                    const allChats = JSON.parse(localStorage.getItem('mj_support_chats') || '{}');
+
+                    if (oldEmail !== this.user.email) {
+                        // Email Change: Migrate to new key
+                        const oldSessionId = 'chat_' + oldEmail.replace(/[^a-zA-Z0-9]/g, '_');
+                        const newSessionId = 'chat_' + this.user.email.replace(/[^a-zA-Z0-9]/g, '_');
+
+                        if (allChats[oldSessionId]) {
+                            allChats[newSessionId] = { ...allChats[oldSessionId] };
+                            allChats[newSessionId].id = newSessionId;
+                            allChats[newSessionId].customerEmail = this.user.email;
+                            allChats[newSessionId].customerName = this.user.name;
+                            delete allChats[oldSessionId];
+                            localStorage.setItem('mj_support_chats', JSON.stringify(allChats));
+                        }
+                    } else {
+                        // Name Change Only: Update existing key
+                        const sessionId = 'chat_' + this.user.email.replace(/[^a-zA-Z0-9]/g, '_');
+                        if (allChats[sessionId]) {
+                            allChats[sessionId].customerName = this.user.name;
+                            localStorage.setItem('mj_support_chats', JSON.stringify(allChats));
+                        }
+                    }
+
+                    // Save to session
+                    localStorage.setItem('mj_session', JSON.stringify(this.user));
+
+                    // Update all user orders with new email if changed
+                    const allOrders = JSON.parse(localStorage.getItem('mj_orders') || '[]');
+                    const updatedOrders = allOrders.map(order => {
+                        if (order.email === oldEmail) {
+                            return { ...order, email: this.user.email, customer: this.user.name, phone: this.user.phone };
+                        }
+                        return order;
+                    });
+                    localStorage.setItem('mj_orders', JSON.stringify(updatedOrders));
+
+                    // Clear password form
+                    this.passwordForm = { current: '', new: '', confirm: '' };
+
+                    // Exit edit mode
+                    this.editMode = false;
+                    alert('Profile updated successfully!');
                 },
 
                 formatDate(isoString) {
