@@ -1,0 +1,6 @@
+node_modules/
+.env
+uploads/
+*.log
+.DS_Store
+e2e-results.txt

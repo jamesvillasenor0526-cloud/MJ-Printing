@@ -4,13 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search Results - MJ Print Advertisement</title>
+    <title>Search Results - MJ Print Services</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="js/store.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/store.js?v=10"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script>
-        if (!localStorage.getItem('mj_session')) {
+        if (typeof AuthAPI === 'undefined' || !AuthAPI.isAuthenticated()) {
             alert('Please sign in to search.');
             window.location.href = 'login.html';
         }
@@ -80,6 +81,37 @@
                         </svg>
                     </button>
                 </div>
+            </div>
+        </div>
+        <div x-show="open" class="md:hidden bg-white border-t border-gray-100 shadow-xl" x-transition>
+            <div class="px-4 pt-2 pb-4 space-y-2">
+                <a href="index.html"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 rounded-lg">Home</a>
+                <a href="portfolio.html"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Portfolio</a>
+                <a href="reviews.html"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Reviews</a>
+                <a href="track.html"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Track
+                    Order</a>
+                <a href="about.html"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">About
+                    Us</a>
+                <a href="cart.html"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Cart
+                    (<span x-text="$store.cart.count">0</span>)</a>
+
+                <!-- Mobile Auth Links -->
+                <template x-if="$store.auth.isLoggedIn">
+                    <a href="profile.html"
+                        class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand border-t border-gray-100"
+                        x-text="'My Account (' + $store.auth.user.name.split(' ')[0] + ')'">My Account</a>
+                </template>
+                <template x-if="!$store.auth.isLoggedIn">
+                    <a href="login.html"
+                        class="block px-4 py-3 text-base font-bold text-center text-brand border-t border-gray-100 mt-2">Sign
+                        In</a>
+                </template>
             </div>
         </div>
     </nav>
@@ -308,7 +340,7 @@
             </div>
 
             <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 text-sm">
-                &copy; 2026 MJ Print Advertisement. All rights reserved.
+                &copy; 2026 MJ Print Services. All rights reserved.
             </div>
         </div>
     </footer>

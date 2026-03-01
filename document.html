@@ -4,14 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document & Paper Products - MJ Print Advertisement</title>
+    <title>Document & Paper Products - MJ Print Services</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="js/store.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/store.js?v=10"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script>
         // Protect Route
-        if (!localStorage.getItem('mj_session')) {
+        if (typeof AuthAPI === 'undefined' || !AuthAPI.isAuthenticated()) {
             alert('Please sign in to view this page.');
             window.location.href = 'login.html';
         }
@@ -68,7 +69,6 @@
                             x-text="'My Account (' + $store.auth.user.name.split(' ')[0] + ')'">My Account</a>
                     </template>
 
-                    <a href="about.html" class="text-gray-500 hover:text-brand font-medium">About Us</a>
                     <a href="cart.html" class="relative group">
                         <svg class="w-7 h-7 text-gray-400 group-hover:text-brand transition-colors" fill="none"
                             stroke="currentColor" viewBox="0 0 24 24">
@@ -115,6 +115,18 @@
                 <a href="cart.html"
                     class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Cart
                     (<span x-text="$store.cart.count">0</span>)</a>
+
+                <!-- Mobile Auth Links -->
+                <template x-if="$store.auth.isLoggedIn">
+                    <a href="profile.html"
+                        class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand border-t border-gray-100"
+                        x-text="'My Account (' + $store.auth.user.name.split(' ')[0] + ')'">My Account</a>
+                </template>
+                <template x-if="!$store.auth.isLoggedIn">
+                    <a href="login.html"
+                        class="block px-4 py-3 text-base font-bold text-center text-brand border-t border-gray-100 mt-2">Sign
+                        In</a>
+                </template>
             </div>
         </div>
     </nav>
@@ -128,6 +140,7 @@
         </nav>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12" x-data="{
+            selectedProduct: null,
             productType: 'Document Printing',
             paperSize: 'A4',
             colorMode: 'Black & White (Text)',
@@ -135,45 +148,58 @@
             notes: '',
             fileName: '',
             imagePreview: null,
-            sizeOptions: {
-                'Document Printing': ['A4', 'Long (8.5x13)', 'Letter', 'Legal'],
-                'Flyers / Leaflets': ['A4', 'A5', 'Long', 'Letter'],
-                'Brochures': ['A4 Bi-fold', 'A4 Tri-fold', 'Letter Bi-fold', 'Letter Tri-fold'],
-                'Business Cards': ['Standard (3.5x2)', 'Mini (2x3.5)'],
-                'Letterheads': ['A4', 'Letter'],
-                'Envelopes': ['Long', 'A4', 'Letter'],
-                'Carbonless Forms (NCR)': ['A4', 'Long', 'Letter', 'Custom'],
-                'Receipts / Invoices': ['A5', 'Half Letter', 'Custom'],
-                'Calendars': ['A4 Wall', 'A3 Wall', 'Desk (Letter)'],
-                'Certificates': ['A4', 'Letter']
+            loading: true,
+
+            async init() {
+                try {
+                    await Alpine.store('products').fetchByCategory('Document Printing');
+                    this.loading = false;
+                    // Set productType to first product name
+                    const products = Alpine.store('products').items;
+                    if (products.length > 0) {
+                        this.productType = products[0].name;
+                    }
+                    this.updateSelectedProduct();
+                    
+                    this.$watch('productType', () => {
+                         this.updateSelectedProduct();
+                    });
+                } catch (e) {
+                    console.error('Error loading products', e);
+                }
             },
-            priceRates: {
-                'Document Printing': { base: 2, colored: 5, photo: 15 },
-                'Flyers / Leaflets': { base: 3, colored: 8, photo: 20 },
-                'Brochures': { base: 10, colored: 25, photo: 50 },
-                'Business Cards': { base: 15, colored: 30, photo: 40 },
-                'Letterheads': { base: 5, colored: 12, photo: 25 },
-                'Envelopes': { base: 8, colored: 15, photo: 30 },
-                'Carbonless Forms (NCR)': { base: 6, colored: 15, photo: 30 },
-                'Receipts / Invoices': { base: 4, colored: 10, photo: 20 },
-                'Calendars': { base: 30, colored: 60, photo: 100 },
-                'Certificates': { base: 8, colored: 20, photo: 35 }
+
+            updateSelectedProduct() {
+                const products = Alpine.store('products').items;
+                this.selectedProduct = products.find(p => p.name === this.productType);
+                
+                if (this.selectedProduct) {
+                    if (this.selectedProduct.options.sizes && this.selectedProduct.options.sizes.length > 0) {
+                        this.paperSize = this.selectedProduct.options.sizes[0];
+                    }
+                     if (this.selectedProduct.options.colors && this.selectedProduct.options.colors.length > 0) {
+                        this.colorMode = this.selectedProduct.options.colors[0];
+                    }
+                }
             },
-            get availableSizes() {
-                return this.sizeOptions[this.productType] || ['A4'];
+
+            get computedPrice() {
+                if (!this.selectedProduct || !this.selectedProduct.priceRates) return 0;
+                
+                const rates = this.selectedProduct.priceRates;
+                let unitPrice = rates.base || 0;
+                
+                if (this.colorMode.includes('Colored')) unitPrice = rates.colored || unitPrice;
+                if (this.colorMode.includes('Photo')) unitPrice = rates.photo || unitPrice;
+                
+                return unitPrice * this.copies;
             },
-            get price() {
-                 const rates = this.priceRates[this.productType] || { base: 2, colored: 5, photo: 15 };
-                 let multiplier = 1;
-                 if (this.colorMode === 'Colored (Graphics/Text)') multiplier = rates.colored / rates.base;
-                 if (this.colorMode === 'Full Photo Quality') multiplier = rates.photo / rates.base;
-                 
-                 return rates.base * multiplier * this.copies;
-            },
+
             handleFileUpload(event) {
                 const file = event.target.files[0];
                 if (file) {
                     this.fileName = file.name;
+                    // Preview only if image
                     if (file.type.startsWith('image/')) {
                         const reader = new FileReader();
                         reader.onload = (e) => {
@@ -181,101 +207,104 @@
                         };
                         reader.readAsDataURL(file);
                     } else {
+                        // For documents, maybe show a generic icon or just filename
                         this.imagePreview = null;
                     }
                 }
             },
+
             addToCart() {
+                if (!this.selectedProduct) return;
+                
                 Alpine.store('cart').add({
-                    id: Date.now(),
-                    name: 'Document Printing',
-                    details: `${this.paperSize}, ${this.colorMode}${this.notes ? ', Note: ' + this.notes : ''}`,
+                    name: this.productType,
+                    details: `${this.paperSize}, ${this.colorMode}${this.notes ? ', Notes: ' + this.notes : ''}`,
                     file: this.fileName,
-                    imagePreview: this.imagePreview, // Add image data
-                    price: this.price / this.copies, 
+                    imagePreview: this.imagePreview,
+                    price: this.computedPrice / this.copies,
                     quantity: this.copies
                 });
+                
                 this.copies = 1;
                 this.notes = '';
                 this.fileName = '';
                 this.imagePreview = null;
                 if(document.getElementById('file-upload')) document.getElementById('file-upload').value = '';
+                
+                 Alpine.store('notification').show(`${this.productType} added to cart!`);
             }
         }">
 
             <div class="lg:col-span-7 space-y-8">
-
                 <div>
-                    <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900">Document & Paper Products</h1>
-                    <p class="mt-2 text-lg text-gray-500">Flyers, business cards, letterheads, certificates, and
+                    <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900">Document Printing</h1>
+                    <p class="mt-2 text-lg text-gray-500">Fast and high-quality printing for documents, flyers, and
                         more.</p>
                 </div>
 
-                <div
-                    class="border-2 border-dashed border-gray-300 rounded-2xl p-8 sm:p-12 text-center hover:border-brand hover:bg-brand-light transition-colors cursor-pointer group bg-white overflow-hidden relative">
+                <!-- Loading State -->
+                <div x-show="loading" class="flex justify-center py-12">
+                    <svg class="animate-spin h-10 w-10 text-brand" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                        </circle>
+                        <path class="opacity-75" fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                        </path>
+                    </svg>
+                </div>
 
+                <div x-show="!loading"
+                    class="border-2 border-dashed border-gray-300 rounded-2xl p-8 sm:p-12 text-center hover:border-brand hover:bg-brand-light transition-colors cursor-pointer group bg-white overflow-hidden relative">
                     <div x-show="!fileName">
                         <div class="flex justify-center">
                             <svg class="w-16 h-16 text-gray-400 group-hover:text-brand transition-colors" fill="none"
                                 stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
-                                </path>
-                            </svg>
-                        </div>
-                        <p class="mt-4 text-lg font-medium text-gray-900">Tap to upload your files</p>
-                        <p class="mt-1 text-sm text-gray-500">PDF, DOCX, or JPG (Max 50MB)</p>
-                        <a href="file-guide.html" target="_blank"
-                            class="mt-3 inline-block text-xs font-semibold text-brand hover:text-brand-hover hover:underline">
-                            Not sure? View File Guide &rarr;
-                        </a>
-                    </div>
-
-                    <!-- Image Preview -->
-                    <div x-show="imagePreview" class="flex flex-col items-center">
-                        <img :src="imagePreview" class="h-48 w-auto object-contain rounded-lg shadow-sm mb-4">
-                        <p class="text-sm font-medium text-green-600 flex items-center">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            Image Loaded
-                        </p>
-                        <p class="text-xs text-gray-500 mt-1" x-text="fileName"></p>
-                    </div>
-
-                    <!-- Non-Image File Display -->
-                    <div x-show="fileName && !imagePreview" class="flex flex-col items-center py-4">
-                        <div class="h-20 w-20 bg-gray-100 rounded-xl flex items-center justify-center mb-3">
-                            <svg class="w-10 h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
                                 </path>
                             </svg>
                         </div>
+                        <p class="mt-4 text-lg font-medium text-gray-900"
+                            x-text="fileName ? 'Selected: ' + fileName : 'Upload Document'">Upload Document</p>
+                        <p class="mt-1 text-sm text-gray-500">PDF, DOCX, PPTX, or Images</p>
+                    </div>
+
+                    <div x-show="fileName" class="flex flex-col items-center">
+                        <template x-if="imagePreview">
+                            <img :src="imagePreview" class="h-48 w-auto object-contain rounded-lg shadow-sm mb-4">
+                        </template>
+                        <template x-if="!imagePreview">
+                            <svg class="w-16 h-16 text-brand mb-4" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                </path>
+                            </svg>
+                        </template>
+
                         <p class="text-lg font-medium text-gray-900" x-text="fileName"></p>
                         <p class="text-sm font-medium text-green-600 flex items-center mt-2">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M5 13l4 4L19 7"></path>
                             </svg>
-                            File Ready
+                            File Loaded
                         </p>
                     </div>
 
                     <input type="file" id="file-upload" class="hidden" @change="handleFileUpload"
-                        accept=".pdf,.docx,.doc,image/*">
+                        accept=".pdf,.doc,.docx,.ppt,.pptx,image/*">
                     <button @click="document.getElementById('file-upload').click()"
                         class="mt-6 px-6 py-3 bg-white border border-gray-300 rounded-full text-sm font-semibold text-gray-700 hover:bg-gray-50 shadow-sm z-10 relative">
                         <span x-text="fileName ? 'Change File' : 'Browse Device'">Browse Device</span>
                     </button>
                 </div>
-
             </div>
 
-            <div class="lg:col-span-5">
+            <div class="lg:col-span-5" x-show="!loading">
                 <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 sm:p-8 lg:sticky lg:top-24">
-                    <h2 class="text-xl font-bold text-gray-900 mb-6">Print Specifications</h2>
+                    <h2 class="text-xl font-bold text-gray-900 mb-6">Print Settings</h2>
 
                     <form class="space-y-6">
 
@@ -283,45 +312,46 @@
                             <label class="block text-sm font-medium text-gray-700 mb-2">Product Type</label>
                             <select x-model="productType"
                                 class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand focus:border-brand bg-white text-base">
-                                <option>Document Printing</option>
-                                <option>Flyers / Leaflets</option>
-                                <option>Brochures</option>
-                                <option>Business Cards</option>
-                                <option>Letterheads</option>
-                                <option>Envelopes</option>
-                                <option>Carbonless Forms (NCR)</option>
-                                <option>Receipts / Invoices</option>
-                                <option>Calendars</option>
-                                <option>Certificates</option>
+                                <template x-for="item in Alpine.store('products').items" :key="item._id">
+                                    <option x-text="item.name" :value="item.name"></option>
+                                </template>
                             </select>
                         </div>
 
-                        <div x-effect="paperSize = availableSizes[0]">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Paper Size / Format</label>
-                            <div class="grid gap-3" :class="{
-                                    'grid-cols-2': availableSizes.length <= 4,
-                                    'grid-cols-3': availableSizes.length > 4
+                        <div
+                            x-show="selectedProduct && selectedProduct.options.sizes && selectedProduct.options.sizes.length > 0">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Paper Size</label>
+                            <div class="grid gap-2" :class="{
+                                    'grid-cols-2': selectedProduct && selectedProduct.options.sizes.length <= 4,
+                                    'grid-cols-3': selectedProduct && selectedProduct.options.sizes.length > 4
                                 }">
-                                <template x-for="size in availableSizes" :key="size">
-                                    <button type="button" @click="paperSize = size"
-                                        :class="paperSize === size ? 'border-2 border-brand bg-brand-light text-brand font-semibold' : 'border border-gray-200 text-gray-600 hover:border-brand hover:text-brand'"
-                                        class="px-4 py-3 rounded-lg text-sm transition-all" x-text="size"></button>
+                                <template x-for="s in (selectedProduct ? selectedProduct.options.sizes : [])" :key="s">
+                                    <button type="button" @click="paperSize = s"
+                                        :class="paperSize === s ? 'border-2 border-brand bg-brand-light text-brand font-semibold' : 'border border-gray-200 text-gray-600 hover:border-brand hover:text-brand'"
+                                        class="px-3 py-2 rounded-lg text-sm transition-all" x-text="s"></button>
                                 </template>
                             </div>
                         </div>
 
-                        <div>
+                        <div
+                            x-show="selectedProduct && selectedProduct.options.colors && selectedProduct.options.colors.length > 0">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Color Mode</label>
                             <select x-model="colorMode"
                                 class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand focus:border-brand bg-white text-base">
-                                <option>Black & White (Text)</option>
-                                <option>Colored (Graphics/Text)</option>
-                                <option>Full Photo Quality</option>
+                                <template x-for="c in (selectedProduct ? selectedProduct.options.colors : [])" :key="c">
+                                    <option x-text="c" :value="c"></option>
+                                </template>
                             </select>
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Number of Copies</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Additional Instructions</label>
+                            <textarea x-model="notes" rows="2" placeholder="E.g., page range, binding instructions..."
+                                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand focus:border-brand bg-white text-sm"></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Copies / Sets</label>
                             <div class="flex items-center border border-gray-300 rounded-lg w-max">
                                 <button type="button" @click="copies > 1 ? copies-- : null"
                                     class="px-4 py-3 text-gray-600 hover:bg-gray-100 border-r border-gray-300">-</button>
@@ -332,25 +362,16 @@
                             </div>
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Notes / Instructions</label>
-                            <textarea rows="3" x-model="notes"
-                                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand focus:border-brand text-sm"
-                                placeholder="e.g., Please bind with red cover..."></textarea>
-                        </div>
-
                         <div class="pt-6 border-t border-gray-100">
                             <div class="flex justify-between items-end mb-4">
                                 <span class="text-sm text-gray-500">Estimated Total</span>
                                 <span class="text-3xl font-extrabold text-gray-900"
-                                    x-text="'₱' + price.toLocaleString('en-US', {minimumFractionDigits: 2})">₱0.00</span>
+                                    x-text="'₱' + computedPrice.toLocaleString('en-US', {minimumFractionDigits: 2})">₱0.00</span>
                             </div>
                             <button type="button" @click="addToCart"
                                 class="w-full bg-brand text-white text-lg font-bold py-4 rounded-xl shadow-lg hover:bg-brand-hover hover:shadow-xl transition-all transform active:scale-95">
                                 Add to Quote
                             </button>
-                            <p class="text-center text-xs text-gray-400 mt-3">Price is an estimate. Final quote sent via
-                                email.</p>
                         </div>
 
                     </form>
@@ -372,7 +393,7 @@
                     <a href="faq.html" class="text-gray-400 hover:text-white transition-colors">FAQ</a>
                     <span class="text-gray-600">|</span>
                     <span class="text-center text-base text-gray-400">
-                        &copy; 2026 MJ Print Advertisement. All rights reserved.
+                        &copy; 2026 MJ Print Services. All rights reserved.
                     </span>
                 </div>
             </div>
@@ -418,7 +439,7 @@
                     </div>
                     <div
                         class="bg-white text-gray-800 p-3 rounded-lg rounded-tl-none shadow-sm text-sm border border-gray-100">
-                        Hi! Welcome to MJ Print Advertisement. How can we help you today?
+                        Hi! Welcome to MJ Print Services. How can we help you today?
                     </div>
                 </div>
 
@@ -472,54 +493,7 @@
         </button>
     </div>
 
-    <script>
-        function chatWidget() {
-            return {
-                isOpen: false,
-                newMessage: '',
-                messages: [],
-                isTyping: false,
-
-                sendMessage() {
-                    const text = this.newMessage.trim();
-                    if (!text) return;
-
-                    // Add user message via direct push (Alpine reactivity)
-                    this.messages.push({
-                        id: Date.now(),
-                        text: text,
-                        isUser: true
-                    });
-
-                    this.newMessage = '';
-                    this.scrollToBottom();
-
-                    // Simulate bot response
-                    this.isTyping = true;
-                    this.scrollToBottom();
-
-                    setTimeout(() => {
-                        this.isTyping = false;
-                        this.messages.push({
-                            id: Date.now() + 1,
-                            text: 'Thanks for reaching out! Our team is currently busy printing awesome stuff. We will get back to you as soon as possible.',
-                            isUser: false
-                        });
-                        this.scrollToBottom();
-                    }, 1500);
-                },
-
-                scrollToBottom() {
-                    this.$nextTick(() => {
-                        const container = document.getElementById('chat-messages');
-                        if (container) {
-                            container.scrollTop = container.scrollHeight;
-                        }
-                    });
-                }
-            }
-        }
-    </script>
+    <script src="js/chat-widget.js"></script>
 </body>
 
 </html>

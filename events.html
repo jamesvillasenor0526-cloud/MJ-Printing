@@ -4,14 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Events & Personal - MJ Print Advertisement</title>
+    <title>Events & Personal - MJ Print Services</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="js/store.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/store.js?v=10"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script>
         // Protect Route
-        if (!localStorage.getItem('mj_session')) {
+        if (typeof AuthAPI === 'undefined' || !AuthAPI.isAuthenticated()) {
             alert('Please sign in to view this page.');
             window.location.href = 'login.html';
         }
@@ -67,7 +68,6 @@
                             x-text="'My Account (' + $store.auth.user.name.split(' ')[0] + ')'">My Account</a>
                     </template>
 
-                    <a href="about.html" class="text-gray-500 hover:text-brand font-medium">About Us</a>
                     <a href="cart.html" class="relative group">
                         <svg class="w-7 h-7 text-gray-400 group-hover:text-brand transition-colors" fill="none"
                             stroke="currentColor" viewBox="0 0 24 24">
@@ -113,6 +113,18 @@
                 <a href="cart.html"
                     class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Cart
                     (<span x-text="$store.cart.count">0</span>)</a>
+
+                <!-- Mobile Auth Links -->
+                <template x-if="$store.auth.isLoggedIn">
+                    <a href="profile.html"
+                        class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand border-t border-gray-100"
+                        x-text="'My Account (' + $store.auth.user.name.split(' ')[0] + ')'">My Account</a>
+                </template>
+                <template x-if="!$store.auth.isLoggedIn">
+                    <a href="login.html"
+                        class="block px-4 py-3 text-base font-bold text-center text-brand border-t border-gray-100 mt-2">Sign
+                        In</a>
+                </template>
             </div>
         </div>
     </nav>
@@ -141,7 +153,10 @@
                 'Paper Bags': ['Small', 'Medium', 'Large'],
                 'Gift Tags': ['2x3.5 inch', '2.5x3.5 inch', 'Custom'],
                 'Acrylic Standees': ['4 inch', '6 inch', '8 inch', '10 inch'],
-                'Medals / Trophies': ['Small', 'Medium', 'Large', 'Custom']
+                'Medals / Trophies': ['Small', 'Medium', 'Large', 'Custom'],
+                'Sash': ['Standard', 'Wide'],
+                'Garland': ['Small (3ft)', 'Medium (5ft)', 'Large (8ft)', 'Custom'],
+                'Ref Magnet': ['ATM Size', 'Square (2.5x2.5)', 'Die-cut/Custom']
             },
             materialOptions: {
                 'Invitations': ['Premium Card Stock', 'Glossy', 'Textured', 'Pearl'],
@@ -152,7 +167,10 @@
                 'Paper Bags': ['Kraft', 'Art Paper', 'With Handle'],
                 'Gift Tags': ['Card Stock', 'Kraft', 'With String'],
                 'Acrylic Standees': ['3mm Clear', '5mm Clear'],
-                'Medals / Trophies': ['Metal', 'Acrylic', 'Resin']
+                'Medals / Trophies': ['Metal', 'Acrylic', 'Resin'],
+                'Sash': ['Satin', 'Polyester'],
+                'Garland': ['Card Stock', 'Glossy Paper', 'Fabric'],
+                'Ref Magnet': ['Glossy', 'Matte', 'Glitter']
             },
             priceRates: {
                 'Invitations': 8,
@@ -163,7 +181,10 @@
                 'Paper Bags': 10,
                 'Gift Tags': 4,
                 'Acrylic Standees': 150,
-                'Medals / Trophies': 200
+                'Medals / Trophies': 200,
+                'Sash': 120,
+                'Garland': 80,
+                'Ref Magnet': 50
             },
             get availableSizes() {
                 return this.sizeOptions[this.productType] || ['Standard'];
@@ -192,7 +213,6 @@
             },
             addToCart() {
                 Alpine.store('cart').add({
-                    id: Date.now(),
                     name: this.productType,
                     details: `Size: ${this.size}, Material: ${this.material}`,
                     file: this.fileName,
@@ -282,6 +302,9 @@
                                 <option>Gift Tags</option>
                                 <option>Acrylic Standees</option>
                                 <option>Medals / Trophies</option>
+                                <option>Sash</option>
+                                <option>Garland</option>
+                                <option>Ref Magnet</option>
                             </select>
                         </div>
 
@@ -376,7 +399,7 @@
             </div>
 
             <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 text-sm">
-                &copy; 2026 MJ Print Advertisement. All rights reserved.
+                &copy; 2026 MJ Print Services. All rights reserved.
             </div>
         </div>
     </footer>

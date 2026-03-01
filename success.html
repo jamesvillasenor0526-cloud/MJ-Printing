@@ -4,10 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Request Submitted - MJ Print Advertisement</title>
+    <title>Request Submitted - MJ Print Services</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="js/store.js"></script>
+    <script src="js/store.js?v=10"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <script>
@@ -64,7 +64,6 @@
                             x-text="'My Account (' + $store.auth.user.name.split(' ')[0] + ')'">My Account</a>
                     </template>
 
-                    <a href="about.html" class="text-gray-500 hover:text-brand font-medium">About Us</a>
                     <a href="cart.html" class="relative group">
                         <svg class="w-7 h-7 text-gray-400 group-hover:text-brand transition-colors" fill="none"
                             stroke="currentColor" viewBox="0 0 24 24">
@@ -111,6 +110,18 @@
                 <a href="cart.html"
                     class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Cart
                     (<span x-text="$store.cart.count">0</span>)</a>
+
+                <!-- Mobile Auth Links -->
+                <template x-if="$store.auth.isLoggedIn">
+                    <a href="profile.html"
+                        class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand border-t border-gray-100"
+                        x-text="'My Account (' + $store.auth.user.name.split(' ')[0] + ')'">My Account</a>
+                </template>
+                <template x-if="!$store.auth.isLoggedIn">
+                    <a href="login.html"
+                        class="block px-4 py-3 text-base font-bold text-center text-brand border-t border-gray-100 mt-2">Sign
+                        In</a>
+                </template>
             </div>
         </div>
     </nav>
@@ -165,7 +176,7 @@
                     <a href="faq.html" class="text-gray-400 hover:text-white transition-colors">FAQ</a>
                     <span class="text-gray-600">|</span>
                     <span class="text-center text-base text-gray-400">
-                        &copy; 2026 MJ Print Advertisement. All rights reserved.
+                        &copy; 2026 MJ Print Services. All rights reserved.
                     </span>
                 </div>
             </div>
@@ -211,7 +222,7 @@
                     </div>
                     <div
                         class="bg-white text-gray-800 p-3 rounded-lg rounded-tl-none shadow-sm text-sm border border-gray-100">
-                        Hi! Welcome to MJ Print Advertisement. How can we help you today?
+                        Hi! Welcome to MJ Print Services. How can we help you today?
                     </div>
                 </div>
 
@@ -265,54 +276,7 @@
         </button>
     </div>
 
-    <script>
-        function chatWidget() {
-            return {
-                isOpen: false,
-                newMessage: '',
-                messages: [],
-                isTyping: false,
-
-                sendMessage() {
-                    const text = this.newMessage.trim();
-                    if (!text) return;
-
-                    // Add user message via direct push (Alpine reactivity)
-                    this.messages.push({
-                        id: Date.now(),
-                        text: text,
-                        isUser: true
-                    });
-
-                    this.newMessage = '';
-                    this.scrollToBottom();
-
-                    // Simulate bot response
-                    this.isTyping = true;
-                    this.scrollToBottom();
-
-                    setTimeout(() => {
-                        this.isTyping = false;
-                        this.messages.push({
-                            id: Date.now() + 1,
-                            text: 'Thanks for reaching out! Our team is currently busy printing awesome stuff. We will get back to you as soon as possible.',
-                            isUser: false
-                        });
-                        this.scrollToBottom();
-                    }, 1500);
-                },
-
-                scrollToBottom() {
-                    this.$nextTick(() => {
-                        const container = document.getElementById('chat-messages');
-                        if (container) {
-                            container.scrollTop = container.scrollHeight;
-                        }
-                    });
-                }
-            }
-        }
-    </script>
+    <script src="js/chat-widget.js"></script>
 </body>
 
 </html>

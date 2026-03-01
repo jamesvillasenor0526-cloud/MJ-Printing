@@ -4,15 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - MJ Print Advertisement</title>
+    <title>Login - MJ Print Services</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script>
-        // Redirect if already logged in
-        if (localStorage.getItem('mj_session')) {
-            window.location.href = 'profile.html';
-        }
-
         tailwind.config = {
             theme: {
                 extend: {
@@ -31,6 +26,13 @@
             }
         }
     </script>
+    <script src="js/api.js"></script>
+    <script>
+        // Redirect if already logged in
+        if (typeof AuthAPI !== 'undefined' && AuthAPI.isAuthenticated()) {
+            window.location.href = 'profile.html';
+        }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
         body {
@@ -40,8 +42,6 @@
 </head>
 
 <body class="bg-gray-50 flex flex-col justify-center min-h-screen py-12 sm:px-6 lg:px-8" x-data="loginApp()">
-
-    <a class="bg-brand w-28" href="admin-login.html">ADMIN LOGIN</a>
 
     <div class="sm:mx-auto sm:w-full sm:max-w-md">
         <a href="index.html" class="flex justify-center mb-6">
@@ -60,10 +60,11 @@
         <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
             <form class="space-y-6" @submit.prevent="login">
                 <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email or Phone Number</label>
                     <div class="mt-1">
-                        <input id="email" name="email" type="email" autocomplete="email" required x-model="email"
-                            class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand focus:border-brand sm:text-sm">
+                        <input id="email" name="email" type="text" autocomplete="username" required x-model="email"
+                            class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand focus:border-brand sm:text-sm"
+                            placeholder="Email or Phone Number">
                     </div>
                 </div>
 
@@ -72,7 +73,8 @@
                     <div class="mt-1">
                         <input id="password" name="password" type="password" autocomplete="current-password" required
                             x-model="password"
-                            class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand focus:border-brand sm:text-sm">
+                            class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand focus:border-brand sm:text-sm"
+                            placeholder="Password">
                     </div>
                 </div>
 
@@ -96,15 +98,22 @@
                 password: '',
                 error: '',
 
-                login() {
-                    const users = JSON.parse(localStorage.getItem('mj_users') || '[]');
-                    const user = users.find(u => u.email === this.email && u.password === this.password);
+                async login() {
+                    this.error = '';
+                    try {
+                        const response = await AuthAPI.login(this.email, this.password);
 
-                    if (user) {
-                        localStorage.setItem('mj_session', JSON.stringify(user));
+                        // Reject admin accounts on customer login
+                        if (response.role === 'admin' || response.role === 'superadmin') {
+                            AuthAPI.logout();
+                            this.error = 'Admin accounts must use the Admin Login page.';
+                            return;
+                        }
+
+                        // Redirect customer to profile
                         window.location.href = 'profile.html';
-                    } else {
-                        this.error = 'Invalid email or password.';
+                    } catch (err) {
+                        this.error = err.message || 'Invalid email or password.';
                     }
                 }
             }

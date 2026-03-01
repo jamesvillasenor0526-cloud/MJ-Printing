@@ -4,10 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Track Order - MJ Print Advertisement</title>
+    <title>Track Order - MJ Print Services</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="js/store.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/store.js?v=10"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <script>
@@ -62,7 +63,6 @@
                             x-text="'My Account (' + $store.auth.user.name.split(' ')[0] + ')'">My Account</a>
                     </template>
 
-                    <a href="about.html" class="text-gray-500 hover:text-brand font-medium">About Us</a>
                     <a href="cart.html" class="relative group">
                         <svg class="w-7 h-7 text-gray-400 group-hover:text-brand transition-colors" fill="none"
                             stroke="currentColor" viewBox="0 0 24 24">
@@ -108,6 +108,18 @@
                 <a href="cart.html"
                     class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Cart
                     (<span x-text="$store.cart.count">0</span>)</a>
+
+                <!-- Mobile Auth Links -->
+                <template x-if="$store.auth.isLoggedIn">
+                    <a href="profile.html"
+                        class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand border-t border-gray-100"
+                        x-text="'My Account (' + $store.auth.user.name.split(' ')[0] + ')'">My Account</a>
+                </template>
+                <template x-if="!$store.auth.isLoggedIn">
+                    <a href="login.html"
+                        class="block px-4 py-3 text-base font-bold text-center text-brand border-t border-gray-100 mt-2">Sign
+                        In</a>
+                </template>
             </div>
         </div>
     </nav>
@@ -116,17 +128,7 @@
 
         <div class="text-center mb-12">
             <h1 class="text-3xl font-extrabold text-gray-900">Track Your Order</h1>
-            <p class="mt-2 text-gray-500">Enter the reference number sent to your email.</p>
-
-            <div class="mt-8 relative max-w-lg mx-auto">
-                <input type="text" x-model="referenceNumber" @keydown.enter="trackOrder()"
-                    placeholder="e.g. MJ-2024-8821"
-                    class="w-full px-5 py-4 border border-gray-300 rounded-full shadow-sm focus:ring-2 focus:ring-brand focus:border-brand outline-none text-lg text-center uppercase tracking-widest">
-                <button @click="trackOrder()"
-                    class="absolute right-2 top-2 bottom-2 bg-brand text-white px-6 rounded-full font-bold hover:bg-brand-hover transition-colors">
-                    Track
-                </button>
-            </div>
+            <p class="mt-2 text-gray-500">View the status of your order below.</p>
             <p x-show="error" x-text="error" class="mt-4 text-red-600 font-medium" style="display: none;"></p>
         </div>
 
@@ -323,7 +325,7 @@
                     }, 0);
                 },
 
-                trackOrder() {
+                async trackOrder() {
                     this.error = '';
                     this.order = null;
                     const ref = this.referenceNumber.trim().toUpperCase();
@@ -333,48 +335,44 @@
                         return;
                     }
 
-                    const orders = JSON.parse(localStorage.getItem('mj_orders') || '[]');
-                    const found = orders.find(o => o.id === ref || o.id === '#' + ref);
-
-                    if (found) {
-                        this.order = found;
-                    } else {
+                    try {
+                        if (typeof OrdersAPI !== 'undefined') {
+                            this.order = await OrdersAPI.trackByReference(ref);
+                        } else {
+                            throw new Error('API not loaded');
+                        }
+                    } catch (err) {
+                        console.error(err);
                         this.error = 'Order not found. Please check your reference number.';
                     }
                 },
 
-                confirmReceived() {
+                async confirmReceived() {
                     if (!this.order) return;
                     if (!confirm("Are you sure you have received this order?")) return;
 
-                    // Update local state
-                    this.order.status = 'Completed';
-
-                    // Update Storage
-                    const orders = JSON.parse(localStorage.getItem('mj_orders') || '[]');
-                    const index = orders.findIndex(o => o.id === this.order.id);
-                    if (index !== -1) {
-                        orders[index].status = 'Completed';
-                        localStorage.setItem('mj_orders', JSON.stringify(orders));
+                    try {
+                        const updatedOrder = await OrdersAPI.confirmReceived(this.order._id);
+                        this.order.status = 'Completed';
+                        alert('Order confirmed as received!');
+                    } catch (err) {
+                        console.error(err);
+                        alert('Failed to confirm order: ' + (err.message || 'Unknown error'));
                     }
                 },
 
-                cancelOrder() {
+                async cancelOrder() {
                     if (!this.order) return;
                     if (!confirm("Are you sure you want to cancel this order? This action cannot be undone.")) return;
 
-                    // Update local state
-                    this.order.status = 'Cancelled';
-
-                    // Update Storage
-                    const orders = JSON.parse(localStorage.getItem('mj_orders') || '[]');
-                    const index = orders.findIndex(o => o.id === this.order.id);
-                    if (index !== -1) {
-                        orders[index].status = 'Cancelled';
-                        localStorage.setItem('mj_orders', JSON.stringify(orders));
+                    try {
+                        await OrdersAPI.cancel(this.order._id);
+                        this.order.status = 'Cancelled';
+                        alert('Order has been cancelled successfully.');
+                    } catch (err) {
+                        console.error(err);
+                        alert('Failed to cancel order: ' + (err.message || 'Unknown error'));
                     }
-
-                    alert('Order has been cancelled successfully.');
                 },
 
                 formatDate(dateString) {
@@ -408,7 +406,7 @@
                     <a href="faq.html" class="text-gray-400 hover:text-white transition-colors">FAQ</a>
                     <span class="text-gray-600">|</span>
                     <span class="text-center text-base text-gray-400">
-                        &copy; 2026 MJ Print Advertisement. All rights reserved.
+                        &copy; 2026 MJ Print Services. All rights reserved.
                     </span>
                 </div>
             </div>
@@ -454,7 +452,7 @@
                     </div>
                     <div
                         class="bg-white text-gray-800 p-3 rounded-lg rounded-tl-none shadow-sm text-sm border border-gray-100">
-                        Hi! Welcome to MJ Print Advertisement. How can we help you today?
+                        Hi! Welcome to MJ Print Services. How can we help you today?
                     </div>
                 </div>
 
@@ -521,125 +519,7 @@
         </button>
     </div>
 
-    <script>
-        function chatWidget() {
-            return {
-                isOpen: false,
-                newMessage: '',
-                messages: [],
-                isTyping: false,
-                sessionId: null,
-                hasGreeted: false,
-
-                init() {
-                    // Unique session for logged-in users, fallback to guest session
-                    const user = Alpine.store('auth') && Alpine.store('auth').user;
-                    if (user && user.email) {
-                        this.sessionId = 'chat_' + user.email.replace(/[^a-zA-Z0-9]/g, '_');
-                    } else {
-                        this.sessionId = localStorage.getItem('mj_chat_session_id');
-                        if (!this.sessionId) {
-                            this.sessionId = 'session_' + Date.now();
-                            localStorage.setItem('mj_chat_session_id', this.sessionId);
-                        }
-                    }
-                    this.loadMessages();
-                    if (this.messages.length > 0) this.hasGreeted = true;
-
-                    // Real-time polling
-                    setInterval(() => {
-                        this.loadMessages();
-                    }, 2000);
-                },
-
-                loadMessages() {
-                    const allChats = JSON.parse(localStorage.getItem('mj_support_chats') || '{}');
-                    if (allChats[this.sessionId]) {
-                        // Check if new messages arrived to avoid unnecessary re-renders/scrolls if possible, 
-                        // but for simplicity replacement is fine.
-                        const oldLen = this.messages.length;
-                        this.messages = allChats[this.sessionId].messages;
-                        if (this.messages.length > oldLen) {
-                            this.scrollToBottom();
-                        }
-                    }
-                },
-
-                sendMessage() {
-                    const text = this.newMessage.trim();
-                    if (!text) return;
-
-                    const msg = {
-                        id: Date.now(),
-                        text: text,
-                        isUser: true,
-                        timestamp: new Date().toISOString()
-                    };
-
-                    this.messages.push(msg);
-                    this.newMessage = '';
-                    this.scrollToBottom();
-                    this.saveToGlobalStore(msg);
-
-                    // Simulated simple welcome if first message
-                    if (!this.hasGreeted) {
-                        this.isTyping = true;
-                        this.scrollToBottom();
-                        setTimeout(() => {
-                            this.isTyping = false;
-                            const botMsg = {
-                                id: Date.now() + 1,
-                                text: 'Thanks for reaching out! An admin will review your message shortly.',
-                                isUser: false,
-                                timestamp: new Date().toISOString()
-                            };
-                            this.messages.push(botMsg);
-                            this.saveToGlobalStore(botMsg);
-                            this.hasGreeted = true;
-                            this.scrollToBottom();
-                        }, 1500);
-                    }
-                },
-
-                saveToGlobalStore(msg) {
-                    const allChats = JSON.parse(localStorage.getItem('mj_support_chats') || '{}');
-                    if (!allChats[this.sessionId]) {
-                        const user = Alpine.store('auth') ? Alpine.store('auth').user : null;
-                        allChats[this.sessionId] = {
-                            id: this.sessionId,
-                            customerName: user ? user.name : 'Guest User',
-                            customerEmail: user ? user.email : 'N/A',
-                            lastMessage: msg.text,
-                            lastUpdated: new Date().toISOString(),
-                            status: 'Open',
-                            messages: []
-                        };
-                    }
-                    allChats[this.sessionId].messages.push(msg);
-                    allChats[this.sessionId].lastMessage = msg.text;
-                    allChats[this.sessionId].lastUpdated = new Date().toISOString();
-                    localStorage.setItem('mj_support_chats', JSON.stringify(allChats));
-                },
-
-                toggleChat() {
-                    // Simple toggle, auth check removed for guest chat support if desired or keep consistent
-                    this.isOpen = !this.isOpen;
-                    if (this.isOpen) {
-                        this.scrollToBottom();
-                    }
-                },
-
-                scrollToBottom() {
-                    this.$nextTick(() => {
-                        const container = document.getElementById('chat-messages');
-                        if (container) {
-                            container.scrollTop = container.scrollHeight;
-                        }
-                    });
-                }
-            }
-        }
-    </script>
+    <script src="js/chat-widget.js"></script>
 </body>
 
 </html>

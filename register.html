@@ -4,15 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - MJ Print Advertisement</title>
+    <title>Register - MJ Print Services</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script>
-        // Redirect if already logged in
-        if (localStorage.getItem('mj_session')) {
-            window.location.href = 'profile.html';
-        }
-
         tailwind.config = {
             theme: {
                 extend: {
@@ -29,6 +24,13 @@
                     }
                 }
             }
+        }
+    </script>
+    <script src="js/api.js"></script>
+    <script>
+        // Redirect if already logged in
+        if (typeof AuthAPI !== 'undefined' && AuthAPI.isAuthenticated()) {
+            window.location.href = 'profile.html';
         }
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
@@ -62,7 +64,8 @@
                     <label for="name" class="block text-sm font-medium text-gray-700">Full Name</label>
                     <div class="mt-1">
                         <input id="name" name="name" type="text" required x-model="name"
-                            class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand focus:border-brand sm:text-sm">
+                            class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand focus:border-brand sm:text-sm"
+                            placeholder="Full Name">
                     </div>
                 </div>
 
@@ -70,6 +73,15 @@
                     <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>
                     <div class="mt-1">
                         <input id="email" name="email" type="email" autocomplete="email" required x-model="email"
+                            class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand focus:border-brand sm:text-sm"
+                            placeholder="Email address">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="phone" class="block text-sm font-medium text-gray-700">Phone Number</label>
+                    <div class="mt-1">
+                        <input id="phone" name="phone" type="tel" required x-model="phone" placeholder="Phone Number"
                             class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand focus:border-brand sm:text-sm">
                     </div>
                 </div>
@@ -78,7 +90,8 @@
                     <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
                     <div class="mt-1">
                         <input id="password" name="password" type="password" required x-model="password"
-                            class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand focus:border-brand sm:text-sm">
+                            class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand focus:border-brand sm:text-sm"
+                            placeholder="Password">
                     </div>
                 </div>
 
@@ -88,7 +101,8 @@
                     <div class="mt-1">
                         <input id="confirmPassword" name="confirmPassword" type="password" required
                             x-model="confirmPassword"
-                            class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand focus:border-brand sm:text-sm">
+                            class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand focus:border-brand sm:text-sm"
+                            placeholder="Confirm Password">
                     </div>
                 </div>
 
@@ -109,12 +123,12 @@
             return {
                 name: '',
                 email: '',
+                phone: '',
                 password: '',
                 confirmPassword: '',
                 error: '',
 
-                register() {
-                    // Clear previous error
+                async register() {
                     this.error = '';
 
                     // Check if passwords match
@@ -123,26 +137,21 @@
                         return;
                     }
 
-                    let users = JSON.parse(localStorage.getItem('mj_users') || '[]');
+                    try {
+                        const response = await AuthAPI.register({
+                            name: this.name,
+                            email: this.email,
+                            phone: this.phone,
+                            password: this.password
+                        });
 
-                    if (users.some(u => u.email === this.email)) {
-                        this.error = 'This email is already registered.';
-                        return;
+                        // AuthAPI automatically stores the token
+
+                        // Redirect to profile
+                        window.location.href = 'profile.html';
+                    } catch (err) {
+                        this.error = err.message || 'Registration failed. Please try again.';
                     }
-
-                    const newUser = {
-                        name: this.name,
-                        email: this.email,
-                        password: this.password, // In a real app, never store plain text passwords!
-                        joined: new Date().toLocaleDateString()
-                    };
-
-                    users.push(newUser);
-                    localStorage.setItem('mj_users', JSON.stringify(users));
-
-                    // Auto login
-                    localStorage.setItem('mj_session', JSON.stringify(newUser));
-                    window.location.href = 'profile.html';
                 }
             }
         }

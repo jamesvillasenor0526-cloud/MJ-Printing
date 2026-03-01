@@ -4,20 +4,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - MJ Print Advertisement</title>
+    <title>Dashboard - MJ Print Services</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <script src="js/api.js"></script>
     <script>
         // Security Check
-        try {
-            const session = localStorage.getItem('mj_admin_session');
-            if (!session) throw new Error('No session');
-            const parsed = JSON.parse(session);
-            if (parsed.role !== 'superadmin') throw new Error('Invalid role');
-        } catch (e) {
-            window.location.href = 'admin-login.html';
+        async function checkAdminAuth() {
+            if (typeof AuthAPI === 'undefined' || !AuthAPI.isAuthenticated()) {
+                window.location.href = 'admin-login.html';
+                return;
+            }
+            try {
+                const user = await AuthAPI.getCurrentUser();
+                if (user.role !== 'admin' && user.role !== 'superadmin') {
+                    throw new Error('Unauthorized');
+                }
+            } catch (e) {
+                console.error('Auth check failed:', e);
+                AuthAPI.logout(); // Clear invalid token
+                window.location.href = 'admin-login.html';
+            }
         }
+        window.addEventListener('load', checkAdminAuth);
 
         tailwind.config = {
             theme: {
@@ -53,8 +63,13 @@
 
     <div class="flex h-full" x-cloak>
 
+        <!-- Mobile Sidebar Overlay -->
+        <div x-show="sidebarOpen" @click="sidebarOpen = false" x-transition.opacity
+            class="fixed inset-0 z-20 bg-black bg-opacity-50 md:hidden"></div>
+
         <!-- Sidebar -->
-        <aside class="w-64 bg-gray-900 text-white flex flex-col shadow-xl flex-shrink-0 z-20">
+        <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+            class="fixed inset-y-0 left-0 z-30 w-64 bg-gray-900 text-white flex flex-col shadow-xl transition-transform duration-300 md:translate-x-0 md:static md:inset-auto md:flex-shrink-0">
             <div class="h-16 flex items-center justify-center border-b border-gray-800 bg-gray-900">
                 <a href="admin-dashboard.html"
                     class="text-2xl font-extrabold tracking-tighter hover:opacity-80 transition-opacity"
@@ -74,6 +89,16 @@
                             d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                     </svg>
                     Overview
+                </a>
+
+                <a href="#" @click.prevent="currentView = 'products'"
+                    :class="currentView === 'products' ? 'bg-brand text-white shadow-md' : 'text-gray-400 hover:bg-gray-800 hover:text-white'"
+                    class="flex items-center px-4 py-3 rounded-lg transition-all font-medium">
+                    <svg class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                    Products
                 </a>
 
                 <a href="#" @click.prevent="currentView = 'orders'"
@@ -129,19 +154,106 @@
 
             <!-- Header -->
             <header
-                class="h-16 bg-white shadow-sm flex items-center justify-between px-8 z-10 border-b border-gray-200">
-                <h2 class="text-xl font-bold text-gray-800 capitalize" x-text="viewTitle"></h2>
+                class="h-16 bg-white shadow-sm flex items-center justify-between px-4 sm:px-8 z-10 border-b border-gray-200">
+                <div class="flex items-center">
+                    <button @click="sidebarOpen = !sidebarOpen" class="mr-4 text-gray-500 focus:outline-none md:hidden">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                    <h2 class="text-xl font-bold text-gray-800 capitalize" x-text="viewTitle"></h2>
+                </div>
 
                 <div class="flex items-center space-x-4">
-                    <button class="text-gray-400 hover:text-gray-600 relative">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
-                            </path>
-                        </svg>
-                        <span x-show="pendingCount > 0"
-                            class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
-                    </button>
+                    <div class="relative" @click.outside="notifOpen = false">
+                        <button @click="notifOpen = !notifOpen"
+                            class="text-gray-400 hover:text-gray-600 relative focus:outline-none">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
+                                </path>
+                            </svg>
+                            <span x-show="notifications.filter(n => !n.isRead).length > 0"
+                                x-text="notifications.filter(n => !n.isRead).length"
+                                class="absolute -top-1 -right-1 flex items-center justify-center h-5 w-5 rounded-full bg-red-500 text-white text-xs font-bold ring-2 ring-white"></span>
+                        </button>
+
+                        <!-- Notification Dropdown -->
+                        <div x-show="notifOpen" x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 -translate-y-2 scale-95"
+                            x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                            x-transition:leave="transition ease-in duration-150"
+                            x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                            x-transition:leave-end="opacity-0 -translate-y-2 scale-95"
+                            class="absolute right-0 mt-3 w-96 bg-white rounded-xl shadow-2xl ring-1 ring-black/5 z-50 overflow-hidden"
+                            style="display: none;">
+
+                            <!-- Header -->
+                            <div
+                                class="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+                                <h4 class="font-bold text-gray-800 text-sm">Notifications</h4>
+                                <button @click="markAllNotifsRead()"
+                                    x-show="notifications.filter(n => !n.isRead).length > 0"
+                                    class="text-xs font-semibold text-brand hover:text-brand-dark hover:underline">Mark
+                                    all read</button>
+                            </div>
+
+                            <!-- List -->
+                            <div class="max-h-96 overflow-y-auto divide-y divide-gray-50">
+                                <template x-for="notif in notifications" :key="notif._id">
+                                    <div @click="notifClicked(notif)"
+                                        class="flex items-start gap-3 px-5 py-3.5 cursor-pointer transition-colors hover:bg-gray-50"
+                                        :class="!notif.isRead ? 'bg-blue-50/40' : ''">
+                                        <!-- Icon -->
+                                        <div class="flex-shrink-0 mt-0.5 w-9 h-9 rounded-full flex items-center justify-center"
+                                            :class="notif.type === 'new_order' ? 'bg-green-100 text-green-600' : notif.type === 'new_review' ? 'bg-yellow-100 text-yellow-600' : 'bg-blue-100 text-blue-600'">
+                                            <svg x-show="notif.type === 'new_order'" class="w-4 h-4" fill="none"
+                                                stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                            </svg>
+                                            <svg x-show="notif.type === 'new_review'" class="w-4 h-4" fill="none"
+                                                stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                            </svg>
+                                            <svg x-show="notif.type === 'new_chat'" class="w-4 h-4" fill="none"
+                                                stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                            </svg>
+                                            <svg x-show="notif.type === 'status_change'" class="w-4 h-4" fill="none"
+                                                stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                            </svg>
+                                        </div>
+                                        <!-- Content -->
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center justify-between">
+                                                <p class="text-sm font-semibold text-gray-900" x-text="notif.title"></p>
+                                                <span x-show="!notif.isRead"
+                                                    class="flex-shrink-0 w-2 h-2 rounded-full bg-brand"></span>
+                                            </div>
+                                            <p class="text-xs text-gray-500 mt-0.5 truncate" x-text="notif.message"></p>
+                                            <p class="text-xs text-gray-400 mt-1" x-text="timeAgo(notif.createdAt)"></p>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- Empty State -->
+                                <div x-show="notifications.length === 0" class="px-5 py-10 text-center">
+                                    <svg class="mx-auto h-10 w-10 text-gray-300" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                    </svg>
+                                    <p class="mt-2 text-sm text-gray-400">No notifications yet</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="h-8 w-px bg-gray-200"></div>
                     <div class="flex items-center text-gray-700">
                         <div
@@ -156,7 +268,7 @@
             </header>
 
             <!-- Dashboard View -->
-            <div x-show="currentView === 'dashboard'" class="flex-1 overflow-y-auto p-8"
+            <div x-show="currentView === 'dashboard'" class="flex-1 overflow-y-auto p-4 sm:p-8"
                 x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4"
                 x-transition:enter-end="opacity-100 translate-y-0">
 
@@ -245,7 +357,7 @@
                             Orders</button>
                     </div>
                     <ul class="divide-y divide-gray-100">
-                        <template x-for="order in recentOrders" :key="order.id">
+                        <template x-for="order in recentOrders" :key="order._id || order.id">
                             <li class="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer"
                                 @click="currentView = 'orders'">
                                 <div class="flex items-center">
@@ -254,11 +366,11 @@
                                     <div>
                                         <div class="flex items-center">
                                             <span class="text-sm font-bold text-gray-900 mr-2"
-                                                x-text="'#' + order.id"></span>
+                                                x-text="'#' + (order.referenceId || order._id)"></span>
                                             <span class="text-xs text-gray-400" x-text="formatDate(order.date)"></span>
                                         </div>
                                         <p class="text-sm text-gray-600 truncate max-w-xs"
-                                            x-text="order.items.map(i => i.name).join(', ')"></p>
+                                            x-text="(order.items || []).map(i => i.name).join(', ')"></p>
                                     </div>
                                 </div>
                                 <span class="px-3 py-1 text-xs font-bold rounded-full border shadow-sm"
@@ -274,7 +386,7 @@
             </div>
 
             <!-- Orders View -->
-            <div x-show="currentView === 'orders'" class="flex-1 overflow-y-auto p-8"
+            <div x-show="currentView === 'orders'" class="flex-1 overflow-y-auto p-4 sm:p-8"
                 x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4"
                 x-transition:enter-end="opacity-100 translate-y-0">
 
@@ -332,10 +444,11 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100 text-sm bg-white">
-                                <template x-for="order in filteredOrders" :key="order.id">
+                                <template x-for="order in filteredOrders" :key="order._id || order.id">
                                     <tr class="hover:bg-gray-50 transition-colors group">
                                         <td class="px-6 py-4 align-top">
-                                            <div class="font-bold text-gray-900" x-text="'#' + order.id"></div>
+                                            <div class="font-bold text-gray-900"
+                                                x-text="'#' + (order.referenceId || order._id)"></div>
                                             <div class="text-xs text-gray-500 mt-1" x-text="formatDate(order.date)">
                                             </div>
                                         </td>
@@ -352,7 +465,7 @@
                                         </td>
                                         <td class="px-6 py-4 align-top">
                                             <ul class="space-y-2">
-                                                <template x-for="item in order.items">
+                                                <template x-for="item in (order.items || [])">
                                                     <li class="text-gray-600 flex items-start gap-3">
                                                         <!-- Show image preview if available -->
                                                         <template x-if="item.imagePreview">
@@ -387,6 +500,30 @@
                                                     </li>
                                                 </template>
                                             </ul>
+                                            <div class="mt-3 pt-2 border-t border-gray-100 flex items-center">
+                                                <span
+                                                    class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                                                    :class="order.deliveryMethod === 'pickup' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'">
+                                                    <svg x-show="order.deliveryMethod === 'pickup'"
+                                                        class="mr-1.5 h-3 w-3 text-blue-500" fill="none"
+                                                        viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m8-10h2m-2-4h2m-7 4h3m-3-4h3m-9 8h10M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                                    </svg>
+                                                    <svg x-show="!order.deliveryMethod || order.deliveryMethod === 'delivery'"
+                                                        class="mr-1.5 h-3 w-3 text-gray-500" fill="none"
+                                                        viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path
+                                                            d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 012-2h5.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V19a2 2 0 01-2 2" />
+                                                    </svg>
+                                                    <span
+                                                        x-text="order.deliveryMethod === 'pickup' ? 'Pickup at Store' : 'Delivery'"></span>
+                                                </span>
+                                            </div>
 
                                         </td>
                                         <td class="px-6 py-4 align-top">
@@ -441,7 +578,8 @@
                                                             class="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-50">
                                                             Change Status</p>
 
-                                                        <button @click="updateStatus(order.id, 'Pending'); open = false"
+                                                        <button
+                                                            @click="updateStatus(order._id || order.id, 'Pending'); open = false"
                                                             class="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-yellow-50 hover:text-yellow-700">
                                                             <span
                                                                 class="w-2 h-2 rounded-full bg-yellow-400 mr-2 group-hover:animate-pulse"></span>
@@ -449,15 +587,15 @@
                                                         </button>
 
                                                         <button
-                                                            @click="updateStatus(order.id, 'Processing'); open = false"
+                                                            @click="updateStatus(order._id || order.id, 'Processing'); open = false"
                                                             class="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700">
                                                             <span
                                                                 class="w-2 h-2 rounded-full bg-blue-400 mr-2 group-hover:animate-pulse"></span>
                                                             Processing
                                                         </button>
 
-                                                        <button
-                                                            @click="updateStatus(order.id, 'Ready for Pickup'); open = false"
+                                                        <button x-show="order.deliveryMethod === 'pickup'"
+                                                            @click="updateStatus(order._id || order.id, 'Ready for Pickup'); open = false"
                                                             class="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700">
                                                             <span
                                                                 class="w-2 h-2 rounded-full bg-purple-400 mr-2 group-hover:animate-pulse"></span>
@@ -465,15 +603,16 @@
                                                         </button>
 
                                                         <button
-                                                            @click="updateStatus(order.id, 'Out for Delivery'); open = false"
-                                                            class="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700">
+                                                            x-show="!order.deliveryMethod || order.deliveryMethod === 'delivery'"
+                                                            @click="updateStatus(order._id || order.id, 'Out for Delivery'); open = false"
+                                                            class="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700">
                                                             <span
-                                                                class="w-2 h-2 rounded-full bg-purple-400 mr-2 group-hover:animate-pulse"></span>
+                                                                class="w-2 h-2 rounded-full bg-indigo-400 mr-2 group-hover:animate-pulse"></span>
                                                             Out for Delivery
                                                         </button>
 
                                                         <button
-                                                            @click="updateStatus(order.id, 'Completed'); open = false"
+                                                            @click="updateStatus(order._id || order.id, 'Completed'); open = false"
                                                             class="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700">
                                                             <span class="w-2 h-2 rounded-full bg-green-400 mr-2"></span>
                                                             Completed
@@ -492,17 +631,31 @@
                                                             </svg>
                                                             Upload Proof
                                                             <input type="file" class="hidden"
-                                                                @change="uploadProof($event, order.id)">
+                                                                @change="uploadProof($event, order._id || order.id)">
                                                         </label>
 
                                                         <div class="border-t border-gray-100 my-1"></div>
-                                                        <button @click="deleteOrder(order.id); open = false"
+                                                        <button
+                                                            @click="deleteOrder(order._id || order.id); open = false"
                                                             class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">
                                                             Delete Order
                                                         </button>
                                                     </div>
                                                 </div>
                                             </div>
+
+                                            <!-- Delete Button for Finalized Orders -->
+                                            <button x-show="['Completed', 'Cancelled'].includes(order.status)"
+                                                @click="deleteOrder(order._id || order.id)"
+                                                class="text-gray-400 hover:text-red-600 transition-colors p-2 rounded-full hover:bg-red-50 bg-white shadow-sm border border-gray-100 ml-2"
+                                                title="Delete Order">
+                                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
                                         </td>
                                     </tr>
                                 </template>
@@ -524,7 +677,7 @@
             </div>
 
             <!-- Reviews View -->
-            <div x-show="currentView === 'reviews'" class="flex-1 overflow-y-auto p-8"
+            <div x-show="currentView === 'reviews'" class="flex-1 overflow-y-auto p-4 sm:p-8"
                 x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4"
                 x-transition:enter-end="opacity-100 translate-y-0">
 
@@ -563,11 +716,44 @@
                                                 </template>
                                             </div>
                                         </td>
-                                        <td class="px-6 py-4 align-top text-gray-600 italic"
-                                            x-text="'&quot;' + review.text + '&quot;'"></td>
-                                        <td class="px-6 py-4 align-top text-right">
-                                            <button @click="deleteReview(review.id)"
-                                                class="text-red-600 hover:text-red-900 text-sm font-medium hover:underline">Delete</button>
+                                        <td class="px-6 py-4 align-top">
+                                            <p class="text-gray-600 italic mb-2"
+                                                x-text="'&quot;' + review.text + '&quot;'"></p>
+
+                                            <!-- Existing Reply -->
+                                            <div x-show="review.reply"
+                                                class="text-sm bg-green-50 text-green-800 p-2 rounded border border-green-100 mb-2">
+                                                <span
+                                                    class="font-bold text-xs uppercase text-green-600 block mb-1">Response:</span>
+                                                <span x-text="review.reply"></span>
+                                            </div>
+
+                                            <!-- Reply Form -->
+                                            <div x-show="replyingTo === review.id" class="mt-2"
+                                                @click.away="replyingTo = null">
+                                                <textarea x-model="replyText"
+                                                    class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-brand focus:border-brand outline-none"
+                                                    rows="3"
+                                                    placeholder="Write a response to this customer..."></textarea>
+                                                <div class="mt-2 flex items-center space-x-2">
+                                                    <button @click="saveReply(review._id || review.id)"
+                                                        class="bg-brand text-white text-xs font-bold px-3 py-1.5 rounded hover:bg-brand-hover transition-colors">
+                                                        Save Response
+                                                    </button>
+                                                    <button @click="replyingTo = null"
+                                                        class="text-gray-500 text-xs hover:text-gray-700 font-medium">
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 align-top text-right space-y-2">
+                                            <button @click="startReply(review)"
+                                                class="text-blue-600 hover:text-blue-900 text-sm font-medium hover:underline block w-full text-right">
+                                                <span x-text="review.reply ? 'Edit Reply' : 'Reply'"></span>
+                                            </button>
+                                            <button @click="deleteReview(review._id || review.id)"
+                                                class="text-red-600 hover:text-red-900 text-sm font-medium hover:underline block w-full text-right">Delete</button>
                                         </td>
                                     </tr>
                                 </template>
@@ -582,7 +768,7 @@
             </div>
 
             <!-- Customers (Chat) View -->
-            <div x-show="currentView === 'customers'" class="flex-1 overflow-y-auto p-8"
+            <div x-show="currentView === 'customers'" class="flex-1 overflow-y-auto p-4 sm:p-8"
                 x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4"
                 x-transition:enter-end="opacity-100 translate-y-0">
 
@@ -604,7 +790,7 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100 text-sm bg-white">
-                                <template x-for="chat in chats" :key="chat.id">
+                                <template x-for="chat in chats" :key="chat._id || chat.sessionId">
                                     <tr class="hover:bg-gray-50 transition-colors cursor-pointer"
                                         @click="viewChat(chat)">
                                         <td class="px-6 py-4 align-top">
@@ -614,10 +800,12 @@
                                                 x-text="chat.customerEmail || 'No email'"></div>
                                         </td>
                                         <td class="px-6 py-4 align-top">
-                                            <p class="text-gray-600 truncate max-w-xs" x-text="chat.lastMessage"></p>
+                                            <p class="text-gray-600 truncate max-w-xs"
+                                                x-text="chat.messages && chat.messages.length > 0 ? chat.messages[chat.messages.length - 1].text : 'No messages'">
+                                            </p>
                                         </td>
                                         <td class="px-6 py-4 align-top whitespace-nowrap text-gray-500"
-                                            x-text="formatDate(chat.lastUpdated)"></td>
+                                            x-text="formatDate(chat.updatedAt || chat.createdAt)"></td>
                                         <td class="px-6 py-4 align-top text-right">
                                             <button @click.stop="viewChat(chat)"
                                                 class="text-brand hover:text-brand-dark font-medium text-sm mr-3">View
@@ -628,6 +816,91 @@
                                 <tr x-show="chats.length === 0">
                                     <td colspan="4" class="px-6 py-12 text-center text-gray-500">No active support chats
                                         found.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Products View -->
+            <div x-show="currentView === 'products'" class="flex-1 overflow-y-auto p-4 sm:p-8"
+                x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4"
+                x-transition:enter-end="opacity-100 translate-y-0">
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full">
+                    <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                        <h3 class="font-bold text-gray-800">Product Catalog</h3>
+                        <button @click="openProductModal()"
+                            class="bg-brand text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-brand-hover transition-colors flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4v16m8-8H4" />
+                            </svg>
+                            Add Product
+                        </button>
+                    </div>
+
+                    <div class="flex-1 overflow-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead
+                                class="bg-gray-100 text-gray-500 text-xs uppercase font-bold tracking-wider sticky top-0 z-10">
+                                <tr>
+                                    <th class="px-6 py-4 border-b border-gray-200">Product</th>
+                                    <th class="px-6 py-4 border-b border-gray-200">Category</th>
+                                    <th class="px-6 py-4 border-b border-gray-200">Price</th>
+                                    <th class="px-6 py-4 border-b border-gray-200">Status</th>
+                                    <th class="px-6 py-4 border-b border-gray-200 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 text-sm bg-white">
+                                <template x-for="product in products" :key="product._id || product.id">
+                                    <tr class="hover:bg-gray-50 transition-colors">
+                                        <td class="px-6 py-4 align-top">
+                                            <div class="flex items-center">
+                                                <div
+                                                    class="h-10 w-10 rounded bg-gray-100 flex-shrink-0 mr-3 border border-gray-200 overflow-hidden">
+                                                    <template x-if="product.image">
+                                                        <img :src="product.image.startsWith('/') ? 'http://localhost:5000' + product.image : product.image"
+                                                            class="w-full h-full object-cover">
+                                                    </template>
+                                                    <template x-if="!product.image">
+                                                        <svg class="w-full h-full text-gray-400 p-2" fill="none"
+                                                            stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                                            </path>
+                                                        </svg>
+                                                    </template>
+                                                </div>
+                                                <div>
+                                                    <div class="font-bold text-gray-900" x-text="product.name"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 align-top text-gray-600" x-text="product.category"></td>
+                                        <td class="px-6 py-4 align-top font-mono text-gray-900"
+                                            x-text="product.basePrice ? '₱' + product.basePrice : (product.priceRates ? 'Var.' : 'N/A')">
+                                        </td>
+                                        <td class="px-6 py-4 align-top">
+                                            <span class="px-2 py-1 rounded-full text-xs font-bold"
+                                                :class="product.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+                                                x-text="product.isActive ? 'Active' : 'Hidden'"></span>
+                                        </td>
+                                        <td class="px-6 py-4 align-top text-right space-x-2">
+                                            <button @click="openPortfolioModal(product)"
+                                                class="text-purple-600 hover:text-purple-900 font-medium hover:underline">Portfolio</button>
+                                            <button @click="openProductModal(product)"
+                                                class="text-blue-600 hover:text-blue-900 font-medium hover:underline">Edit</button>
+                                            <button @click="deleteProduct(product._id || product.id)"
+                                                class="text-red-600 hover:text-red-900 font-medium hover:underline">Delete</button>
+                                        </td>
+                                    </tr>
+                                </template>
+                                <tr x-show="products.length === 0">
+                                    <td colspan="5" class="px-6 py-12 text-center text-gray-500">No products found. See
+                                        'Active' filter or add one.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -659,7 +932,7 @@
                                     </button>
                                 </div>
                                 <div id="admin-chat-messages" class="flex-1 p-4 overflow-y-auto bg-gray-50 space-y-3">
-                                    <template x-for="(msg, index) in selectedChat.messages" :key="msg.id">
+                                    <template x-for="(msg, index) in selectedChat.messages" :key="msg._id || index">
                                         <div>
                                             <!-- Date separator -->
                                             <template
@@ -673,9 +946,10 @@
                                             </template>
 
                                             <!-- Message bubble -->
-                                            <div class="flex" :class="msg.isUser ? 'justify-start' : 'justify-end'">
+                                            <div class="flex"
+                                                :class="msg.sender === 'customer' ? 'justify-start' : 'justify-end'">
                                                 <div class="max-w-[80%] rounded-lg p-3 text-sm"
-                                                    :class="msg.isUser ? 'bg-white border border-gray-200 text-gray-800' : 'bg-brand text-white'">
+                                                    :class="msg.sender === 'customer' ? 'bg-white border border-gray-200 text-gray-800' : 'bg-brand text-white'">
                                                     <p x-text="msg.text"></p>
                                                     <p class="text-[10px] mt-1 opacity-70"
                                                         x-text="new Date(msg.timestamp || msg.id).toLocaleTimeString()">
@@ -693,7 +967,7 @@
                                         <div class="flex justify-between space-x-3">
                                             <button type="button"
                                                 class="inline-flex justify-center rounded-md border border-red-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-red-600 hover:bg-red-50 focus:outline-none sm:text-sm"
-                                                @click="deleteChat(selectedChat.id)">
+                                                @click="deleteChat(selectedChat.sessionId)">
                                                 Delete Chat
                                             </button>
                                             <div class="flex space-x-3">
@@ -717,6 +991,150 @@
             </div>
 
         </main>
+
+        <!-- Product Modal -->
+        <div x-show="productModalOpen" class="fixed inset-0 z-50 overflow-y-auto" x-cloak style="display: none;">
+            <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 transition-opacity" aria-hidden="true" @click="productModalOpen = false">
+                    <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+                </div>
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                <div
+                    class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4"
+                            x-text="editingProduct ? 'Edit Product' : 'Add New Product'"></h3>
+
+                        <form @submit.prevent="saveProduct" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Product Name</label>
+                                <input type="text" x-model="productForm.name" required
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-brand focus:border-brand">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Category</label>
+                                <select x-model="productForm.category" required
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-brand focus:border-brand">
+                                    <option value="Large Format">Large Format</option>
+                                    <option value="Document Printing">Document Printing</option>
+                                    <option value="Merchandise">Merchandise</option>
+                                    <option value="Photo Lab">Photo Lab</option>
+                                    <option value="Events">Events</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Base Price (₱)</label>
+                                <input type="number" x-model="productForm.basePrice" min="0" step="0.01"
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-brand focus:border-brand">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Description</label>
+                                <textarea x-model="productForm.description" rows="3"
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-brand focus:border-brand"></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Image</label>
+                                <input type="file" @change="handleImageUpload" accept="image/*"
+                                    class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-light file:text-brand hover:file:bg-brand/20">
+                            </div>
+
+                            <div class="flex items-center">
+                                <input type="checkbox" x-model="productForm.isActive" id="isActive"
+                                    class="h-4 w-4 text-brand focus:ring-brand border-gray-300 rounded">
+                                <label for="isActive" class="ml-2 block text-sm text-gray-900">Active (Visible to
+                                    customers)</label>
+                            </div>
+
+                            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse -mx-6 -mb-4 mt-4">
+                                <button type="submit"
+                                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-brand text-base font-medium text-white hover:bg-brand-hover focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
+                                    Save Product
+                                </button>
+                                <button type="button" @click="productModalOpen = false"
+                                    class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Portfolio Images Modal -->
+        <div x-show="portfolioModalOpen" class="fixed inset-0 z-50 overflow-y-auto" x-cloak style="display: none;">
+            <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 transition-opacity" aria-hidden="true" @click="portfolioModalOpen = false">
+                    <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+                </div>
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                <div
+                    class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl w-full">
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="text-lg leading-6 font-medium text-gray-900">Portfolio Images</h3>
+                                <p class="text-sm text-gray-500 mt-1" x-text="portfolioProduct?.name"></p>
+                            </div>
+                            <button @click="portfolioModalOpen = false" class="text-gray-400 hover:text-gray-500">
+                                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- Current Portfolio Images -->
+                        <div class="mb-4">
+                            <p class="text-sm font-medium text-gray-700 mb-2">Current Showcase Images</p>
+                            <div x-show="portfolioProduct?.portfolioImages?.length > 0" class="grid grid-cols-3 gap-3">
+                                <template x-for="(img, index) in (portfolioProduct?.portfolioImages || [])"
+                                    :key="index">
+                                    <div class="relative rounded-lg overflow-hidden bg-gray-100 aspect-square">
+                                        <img :src="img.startsWith('/') ? 'http://localhost:5000' + img : img"
+                                            class="w-full h-full object-cover">
+                                        <button @click.stop="removePortfolioImage(img)" type="button"
+                                            class="absolute top-1 right-1 z-10 bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 cursor-pointer">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M6 18L18 6M6 6l12 12"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </template>
+                            </div>
+                            <p x-show="!portfolioProduct?.portfolioImages?.length"
+                                class="text-sm text-gray-400 italic py-4 text-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                                No portfolio images yet. Upload some below.
+                            </p>
+                        </div>
+
+                        <!-- Upload New Images -->
+                        <div class="border-t border-gray-200 pt-4">
+                            <p class="text-sm font-medium text-gray-700 mb-2">Upload New Images (max 5 at a time)</p>
+                            <input type="file" id="portfolioFileInput" multiple accept="image/*"
+                                class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                            <button @click="uploadPortfolioImages()" :disabled="portfolioUploading"
+                                class="mt-3 inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-bold rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                <svg x-show="portfolioUploading" class="animate-spin -ml-1 mr-2 h-4 w-4" fill="none"
+                                    viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                        stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                </svg>
+                                <span x-text="portfolioUploading ? 'Uploading...' : 'Upload Images'"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Full-Screen Image Lightbox Modal -->
         <div x-show="lightboxImage" @click="lightboxImage = null" x-transition:enter="transition ease-out duration-200"
@@ -745,128 +1163,317 @@
     <script>
         function dashboardApp() {
             return {
-                currentView: 'dashboard', // dashboard, orders, reviews, customers
+                currentView: 'dashboard',
+                sidebarOpen: false,
                 orders: [],
                 reviews: [],
                 chats: [],
+                products: [], // Added
                 searchQuery: '',
                 filterStatus: 'Active',
                 selectedChat: null,
+                replyingTo: null,
+                replyText: '',
                 adminReply: '',
-                lightboxImage: null, // For full-screen image viewer
+                lightboxImage: null,
+                notifications: [],
+                notifOpen: false,
+
+                // Product Modal State
+                productModalOpen: false,
+                editingProduct: null,
+                productForm: {
+                    name: '',
+                    category: 'Large Format',
+                    basePrice: 0,
+                    description: '',
+                    isActive: true,
+                    image: null
+                },
+                productImageFile: null,
 
                 get viewTitle() {
                     if (this.currentView === 'reviews') return 'Review Management';
                     if (this.currentView === 'customers') return 'Customer Support';
+                    if (this.currentView === 'products') return 'Product Management'; // Added
                     return this.currentView === 'dashboard' ? 'Overview' : 'All Orders';
                 },
 
-                init() {
-                    this.loadOrders();
-                    this.loadReviews();
-                    this.loadChats();
+                async init() {
+                    // Wait for auth check to pass mostly, but we can start loading
+                    await this.loadOrders();
+                    await this.loadReviews();
+                    await this.loadChats();
+                    await this.loadProducts();
+                    await this.loadNotifications();
 
-                    // Poll for new messages every 2 seconds
+                    // Poll for updates
                     setInterval(() => {
                         this.loadChats();
-                    }, 2000);
+                        this.loadNotifications();
+                    }, 15000);
                 },
 
-                logout() {
+                async logout() {
                     if (confirm("Are you sure you want to sign out?")) {
-                        localStorage.removeItem('mj_admin_session');
+                        AuthAPI.logout();
                         window.location.href = 'admin-login.html';
                     }
                 },
 
-                calculateSubtotal(items) {
-                    if (!items) return 0;
-                    return items.reduce((sum, item) => {
-                        const price = typeof item.price === 'string'
-                            ? parseFloat(item.price.replace(/[^0-9.]/g, ''))
-                            : item.price;
-                        return sum + (price * item.quantity);
-                    }, 0);
-                },
-
-                loadOrders() {
-                    const stored = localStorage.getItem('mj_orders');
-                    if (stored) {
-                        try {
-                            this.orders = JSON.parse(stored).sort((a, b) => new Date(b.date) - new Date(a.date));
-                        } catch (e) { console.error('Error parsing orders', e); }
+                // --- Products ---
+                async loadProducts() {
+                    try {
+                        this.products = await ProductsAPI.getAllAdmin();
+                    } catch (e) {
+                        console.error('Failed to load products:', e);
                     }
                 },
 
-                loadReviews() {
-                    const stored = localStorage.getItem('mj_reviews');
-                    if (stored) {
-                        try {
-                            this.reviews = JSON.parse(stored);
-                        } catch (e) { console.error('Error parsing reviews', e); }
+                openProductModal(product = null) {
+                    this.editingProduct = product;
+                    if (product) {
+                        this.productForm = {
+                            name: product.name,
+                            category: product.category,
+                            basePrice: product.basePrice,
+                            description: product.description || '',
+                            isActive: product.isActive,
+                            image: product.image
+                        };
+                    } else {
+                        this.productForm = {
+                            name: '',
+                            category: 'Large Format',
+                            basePrice: 0,
+                            description: '',
+                            isActive: true,
+                            image: null
+                        };
+                    }
+                    this.productImageFile = null;
+                    this.productModalOpen = true;
+                },
+
+                handleImageUpload(event) {
+                    const file = event.target.files[0];
+                    if (file) {
+                        this.productImageFile = file;
                     }
                 },
 
-                loadChats() {
-                    const stored = localStorage.getItem('mj_support_chats');
-                    if (stored) {
-                        try {
-                            const chatsObj = JSON.parse(stored);
-                            const newChats = Object.values(chatsObj)
-                                .sort((a, b) => new Date(b.lastUpdated) - new Date(a.lastUpdated));
+                async saveProduct() {
+                    try {
+                        const formData = new FormData();
+                        formData.append('name', this.productForm.name);
+                        formData.append('category', this.productForm.category);
+                        formData.append('basePrice', this.productForm.basePrice);
+                        formData.append('description', this.productForm.description);
+                        formData.append('isActive', this.productForm.isActive);
 
-                            this.chats = newChats;
+                        if (this.productImageFile) {
+                            formData.append('image', this.productImageFile);
+                        }
 
-                            // If a chat is open, update it to show new messages
+                        if (this.editingProduct) {
+                            await ProductsAPI.update(this.editingProduct._id || this.editingProduct.id, formData);
+                        } else {
+                            await ProductsAPI.create(formData);
+                        }
+
+                        await this.loadProducts();
+                        this.productModalOpen = false;
+                        alert(this.editingProduct ? 'Product updated successfully' : 'Product created successfully');
+                    } catch (e) {
+                        alert('Failed to save product: ' + e.message);
+                    }
+                },
+
+                async deleteProduct(id) {
+                    if (!confirm('Are you sure you want to delete this product?')) return;
+                    try {
+                        await ProductsAPI.delete(id);
+                        this.loadProducts();
+                    } catch (err) {
+                        alert('Failed to delete product: ' + err.message);
+                    }
+                },
+
+                // --- Portfolio Images ---
+                portfolioModalOpen: false,
+                portfolioProduct: null,
+                portfolioUploading: false,
+
+                openPortfolioModal(product) {
+                    this.portfolioProduct = product;
+                    this.portfolioModalOpen = true;
+                },
+
+                async uploadPortfolioImages() {
+                    const input = document.getElementById('portfolioFileInput');
+                    if (!input.files || input.files.length === 0) {
+                        alert('Please select images to upload.');
+                        return;
+                    }
+                    this.portfolioUploading = true;
+                    try {
+                        const formData = new FormData();
+                        for (const file of input.files) {
+                            formData.append('images', file);
+                        }
+                        const result = await ProductsAPI.uploadPortfolioImages(this.portfolioProduct._id, formData);
+                        this.portfolioProduct.portfolioImages = result.portfolioImages;
+                        input.value = '';
+                        // Also update the product in the products list
+                        const idx = this.products.findIndex(p => (p._id || p.id) === (this.portfolioProduct._id || this.portfolioProduct.id));
+                        if (idx !== -1) this.products[idx].portfolioImages = result.portfolioImages;
+                    } catch (err) {
+                        alert('Upload failed: ' + err.message);
+                    } finally {
+                        this.portfolioUploading = false;
+                    }
+                },
+
+                async removePortfolioImage(imageUrl) {
+                    if (!confirm('Remove this portfolio image?')) return;
+                    try {
+                        const result = await ProductsAPI.deletePortfolioImage(this.portfolioProduct._id, imageUrl);
+                        this.portfolioProduct.portfolioImages = result.portfolioImages;
+                        const idx = this.products.findIndex(p => (p._id || p.id) === (this.portfolioProduct._id || this.portfolioProduct.id));
+                        if (idx !== -1) this.products[idx].portfolioImages = result.portfolioImages;
+                    } catch (err) {
+                        alert('Failed to remove image: ' + err.message);
+                    }
+                },
+                // --- Orders ---
+                async loadOrders() {
+                    try {
+                        this.orders = await OrdersAPI.getAllOrders();
+                    } catch (e) {
+                        console.error('Failed to load orders:', e);
+                    }
+                },
+
+                async updateStatus(id, newStatus) {
+                    try {
+                        const updatedOrder = await OrdersAPI.updateStatus(id, newStatus);
+                        // Update local
+                        const idx = this.orders.findIndex(o => o.id === id || o._id === id);
+                        if (idx !== -1) this.orders[idx] = updatedOrder;
+                        // Reload to be safe
+                        await this.loadOrders();
+                    } catch (e) {
+                        alert('Failed to update status: ' + e.message);
+                    }
+                },
+
+                async deleteOrder(id) {
+                    if (!confirm("Are you sure you want to delete this order? This cannot be undone.")) return;
+                    try {
+                        await OrdersAPI.delete(id);
+                        this.orders = this.orders.filter(o => o.id !== id && o._id !== id);
+                    } catch (e) {
+                        alert('Failed to delete order: ' + e.message);
+                    }
+                },
+
+                uploadProof(event, id) {
+                    alert("Proof upload via Admin API not yet implemented. Please use direct DB access or implement file upload endpoint.");
+                    // Not implemented in backend yet for Admin override
+                },
+
+                // --- Reviews ---
+                async loadReviews() {
+                    try {
+                        this.reviews = await ReviewsAPI.getAll();
+                    } catch (e) {
+                        console.error('Failed to load reviews:', e);
+                    }
+                },
+
+                async deleteReview(id) {
+                    if (!confirm("Are you sure you want to delete this review?")) return;
+                    try {
+                        await ReviewsAPI.delete(id);
+                        this.reviews = this.reviews.filter(r => r.id !== id && r._id !== id);
+                    } catch (e) {
+                        alert('Failed to delete review: ' + e.message);
+                    }
+                },
+
+                startReply(review) {
+                    this.replyingTo = review.id || review._id;
+                    this.replyText = review.reply || '';
+                },
+
+                async saveReply(id) {
+                    try {
+                        await ReviewsAPI.addReply(id, this.replyText);
+                        await this.loadReviews();
+                        this.replyingTo = null;
+                        this.replyText = '';
+                    } catch (e) {
+                        alert('Failed to save reply: ' + e.message);
+                    }
+                },
+
+                // --- Chats ---
+                async loadChats() {
+                    try {
+                        if (typeof ChatsAPI !== 'undefined') {
+                            this.chats = await ChatsAPI.getAllChats();
+
+                            // Sort by lastUpdated
+                            this.chats.sort((a, b) => new Date(b.lastUpdated) - new Date(a.lastUpdated));
+
+                            // Update selected chat if open
                             if (this.selectedChat) {
-                                const updatedChat = this.chats.find(c => c.id === this.selectedChat.id);
-                                if (updatedChat) {
-                                    const oldMsgCount = this.selectedChat.messages.length;
-                                    this.selectedChat = updatedChat;
-
-                                    // Scroll only if new messages arrived
-                                    if (updatedChat.messages.length > oldMsgCount) {
-                                        this.scrollToBottom();
-                                    }
+                                const updated = this.chats.find(c => c.id === this.selectedChat.id || c._id === this.selectedChat._id);
+                                if (updated && updated.messages.length > this.selectedChat.messages.length) {
+                                    this.selectedChat = updated;
+                                    this.scrollToBottom();
                                 }
                             }
-                        } catch (e) { console.error('Error parsing chats', e); }
-                    } else {
-                        this.chats = [];
+                        }
+                    } catch (e) {
+                        console.error('Failed to load chats:', e);
                     }
                 },
 
                 viewChat(chat) {
                     this.selectedChat = chat;
-                    this.adminReply = ''; // Reset reply field
+                    this.adminReply = '';
                     this.scrollToBottom();
                 },
 
-                sendAdminReply() {
+                async sendAdminReply() {
                     if (!this.selectedChat || !this.adminReply.trim()) return;
-
-                    const msg = {
-                        id: Date.now(),
-                        text: this.adminReply.trim(),
-                        isUser: false, // Admin is not the "User" (Customer)
-                        timestamp: new Date().toISOString()
-                    };
-
-                    // Update local state
-                    this.selectedChat.messages.push(msg);
-                    this.selectedChat.lastMessage = "Admin: " + msg.text;
-                    this.selectedChat.lastUpdated = msg.timestamp;
-
-                    // Update the main chats list
-                    const chatIndex = this.chats.findIndex(c => c.id === this.selectedChat.id);
-                    if (chatIndex !== -1) {
-                        this.chats[chatIndex] = this.selectedChat;
+                    try {
+                        const chatSessionId = this.selectedChat.sessionId;
+                        await ChatsAPI.sendMessage(chatSessionId, this.adminReply.trim());
+                        this.adminReply = '';
+                        await this.loadChats();
+                        // Re-select to update view
+                        const updated = this.chats.find(c => c.sessionId === chatSessionId);
+                        if (updated) {
+                            this.selectedChat = updated;
+                            this.scrollToBottom();
+                        }
+                    } catch (e) {
+                        alert('Failed to send message: ' + e.message);
                     }
+                },
 
-                    // Save to storage
-                    this.saveChats();
-                    this.adminReply = ''; // Clear input
-                    this.scrollToBottom();
+                async deleteChat(sessionId) {
+                    if (!confirm("Are you sure you want to delete this chat permanently?")) return;
+                    try {
+                        await ChatsAPI.deleteChat(sessionId);
+                        this.selectedChat = null;
+                        await this.loadChats();
+                        alert('Chat deleted successfully.');
+                    } catch (e) {
+                        alert('Failed to delete chat: ' + e.message);
+                    }
                 },
 
                 scrollToBottom() {
@@ -878,71 +1485,68 @@
                     });
                 },
 
-                deleteChat(chatId) {
-                    if (!confirm("Are you sure you want to delete this chat conversation? This cannot be undone.")) return;
-
-                    // Remove from array
-                    this.chats = this.chats.filter(c => c.id !== chatId);
-
-                    // Close modal
-                    this.selectedChat = null;
-
-                    // Save to storage
-                    this.saveChats();
-                },
-
-                saveChats() {
-                    const chatsObj = {};
-                    this.chats.forEach(chat => {
-                        chatsObj[chat.id] = chat;
-                    });
-                    localStorage.setItem('mj_support_chats', JSON.stringify(chatsObj));
-                },
-
-                deleteReview(id) {
-                    if (confirm("Are you sure you want to delete this review?")) {
-                        this.reviews = this.reviews.filter(r => r.id !== id);
-                        this.saveReviews();
-                    }
-                },
-
-                saveReviews() {
-                    localStorage.setItem('mj_reviews', JSON.stringify(this.reviews));
-                },
-
-                updateStatus(id, newStatus) {
-                    const order = this.orders.find(o => o.id === id);
-                    if (order) {
-                        order.status = newStatus;
-                        this.saveOrders();
-                    }
-                },
-
-                deleteOrder(id) {
-                    if (confirm("Are you sure you want to delete this order? This cannot be undone.")) {
-                        this.orders = this.orders.filter(o => o.id !== id);
-                        this.saveOrders();
-                    }
-                },
-
-                uploadProof(event, id) {
-                    const file = event.target.files[0];
-                    if (!file) return;
-
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const order = this.orders.find(o => o.id === id);
-                        if (order) {
-                            order.proof = e.target.result; // Store Base64 string
-                            this.saveOrders();
-                            alert("Proof of delivery uploaded!");
+                // --- Notifications ---
+                async loadNotifications() {
+                    try {
+                        if (typeof NotificationsAPI !== 'undefined') {
+                            this.notifications = await NotificationsAPI.getAll();
                         }
-                    };
-                    reader.readAsDataURL(file);
+                    } catch (e) {
+                        console.error('Failed to load notifications:', e);
+                    }
                 },
 
-                saveOrders() {
-                    localStorage.setItem('mj_orders', JSON.stringify(this.orders));
+                async markNotifRead(id) {
+                    try {
+                        await NotificationsAPI.markRead(id);
+                        const notif = this.notifications.find(n => n._id === id);
+                        if (notif) notif.isRead = true;
+                    } catch (e) {
+                        console.error('Failed to mark notification read:', e);
+                    }
+                },
+
+                async markAllNotifsRead() {
+                    try {
+                        await NotificationsAPI.markAllRead();
+                        this.notifications.forEach(n => n.isRead = true);
+                    } catch (e) {
+                        console.error('Failed to mark all read:', e);
+                    }
+                },
+
+                notifClicked(notif) {
+                    if (!notif.isRead) this.markNotifRead(notif._id);
+                    this.notifOpen = false;
+                    if (notif.type === 'new_order') this.currentView = 'orders';
+                    else if (notif.type === 'new_review') this.currentView = 'reviews';
+                    else if (notif.type === 'new_chat') this.currentView = 'customers';
+                },
+
+                timeAgo(dateStr) {
+                    if (!dateStr) return '';
+                    const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+                    if (seconds < 60) return 'Just now';
+                    const minutes = Math.floor(seconds / 60);
+                    if (minutes < 60) return minutes + 'm ago';
+                    const hours = Math.floor(minutes / 60);
+                    if (hours < 24) return hours + 'h ago';
+                    const days = Math.floor(hours / 24);
+                    if (days < 7) return days + 'd ago';
+                    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                },
+
+                // --- Helpers ---
+                calculateSubtotal(items) {
+                    if (!items || !Array.isArray(items)) return 0;
+                    return items.reduce((sum, item) => {
+                        if (!item) return sum;
+                        const price = typeof item.price === 'string'
+                            ? parseFloat(item.price.replace(/[^0-9.]/g, ''))
+                            : (typeof item.price === 'number' ? item.price : 0);
+                        const quantity = typeof item.quantity === 'number' ? item.quantity : 0;
+                        return sum + (price * quantity);
+                    }, 0);
                 },
 
                 formatDate(isoString) {
@@ -952,13 +1556,13 @@
                     });
                 },
 
-                // Getters for Computed Properties
+                // Getters
                 get pendingCount() {
                     return this.orders.filter(o => o.status === 'Pending').length;
                 },
 
                 get activeOrdersCount() {
-                    return this.orders.filter(o => o.status === 'Processing' || o.status === 'Ready').length;
+                    return this.orders.filter(o => o.status === 'Processing' || o.status === 'Ready for Pickup' || o.status === 'In Production').length;
                 },
 
                 get totalRevenue() {
@@ -967,35 +1571,36 @@
 
                 get revenueGrowth() {
                     const now = new Date();
-                    const currentMonth = now.getMonth();
-                    const currentYear = now.getFullYear();
+                    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-                    // Calculate current month revenue
-                    const currentMonthRevenue = this.orders
-                        .filter(order => {
-                            const orderDate = new Date(order.date);
-                            return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
+                    const thisMonthRevenue = this.orders
+                        .filter(o => {
+                            const d = o.date ? new Date(o.date) : null;
+                            return d && d >= thisMonthStart && o.status === 'Completed';
                         })
-                        .reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+                        .reduce((sum, o) => sum + (Number(o.total) || 0), 0);
 
-                    // Calculate last month revenue
-                    const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-                    const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
                     const lastMonthRevenue = this.orders
-                        .filter(order => {
-                            const orderDate = new Date(order.date);
-                            return orderDate.getMonth() === lastMonth && orderDate.getFullYear() === lastMonthYear;
+                        .filter(o => {
+                            const d = o.date ? new Date(o.date) : null;
+                            return d && d >= lastMonthStart && d < thisMonthStart && o.status === 'Completed';
                         })
-                        .reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+                        .reduce((sum, o) => sum + (Number(o.total) || 0), 0);
 
-                    // Calculate percentage growth
-                    if (lastMonthRevenue === 0) return currentMonthRevenue > 0 ? 100 : 0;
-                    return ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue * 100).toFixed(1);
+                    if (lastMonthRevenue === 0) {
+                        return thisMonthRevenue > 0 ? 100 : 0;
+                    }
+                    return Math.round(((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 1000) / 10;
                 },
 
                 get recentOrders() {
                     return [...this.orders]
-                        .sort((a, b) => new Date(b.date) - new Date(a.date))
+                        .sort((a, b) => {
+                            const dateA = a.date ? new Date(a.date) : new Date(0);
+                            const dateB = b.date ? new Date(b.date) : new Date(0);
+                            return dateB - dateA;
+                        })
                         .slice(0, 5);
                 },
 
@@ -1004,33 +1609,35 @@
                     if (this.searchQuery) {
                         const q = this.searchQuery.toLowerCase();
                         filtered = filtered.filter(o =>
-                            o.id.toString().includes(q) ||
-                            o.customer.toLowerCase().includes(q) ||
-                            o.email.toLowerCase().includes(q)
+                            (o.referenceId && o.referenceId.toLowerCase().includes(q)) ||
+                            (o.id && o.id.toString().includes(q)) ||
+                            (o.customer && o.customer.toLowerCase().includes(q)) ||
+                            (o.email && o.email.toLowerCase().includes(q))
                         );
                     }
 
                     if (this.filterStatus === 'Active') {
-                        // Show all active orders (Pending, Processing, Ready, etc)
                         filtered = filtered.filter(o => !['Completed', 'Cancelled'].includes(o.status));
                     } else if (this.filterStatus === 'Completed') {
                         filtered = filtered.filter(o => o.status === 'Completed');
                     } else if (this.filterStatus === 'Cancelled') {
                         filtered = filtered.filter(o => o.status === 'Cancelled');
-                    } else if (this.filterStatus !== 'All') {
-                        // Fallback for legacy specific status selection if needed
-                        filtered = filtered.filter(o => o.status === this.filterStatus);
                     }
 
-                    return filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    return filtered.sort((a, b) => {
+                        const dateA = a.date ? new Date(a.date) : new Date(0);
+                        const dateB = b.date ? new Date(b.date) : new Date(0);
+                        return dateB - dateA;
+                    });
                 },
 
                 getStatusClass(status) {
                     switch (status) {
                         case 'Pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-                        case 'Processing': return 'bg-blue-100 text-blue-800 border-blue-200';
+                        case 'Processing':
+                        case 'In Production': return 'bg-blue-100 text-blue-800 border-blue-200';
                         case 'Ready for Pickup': return 'bg-purple-100 text-purple-800 border-purple-200';
-                        case 'Out for Delivery': return 'bg-purple-100 text-purple-800 border-purple-200';
+                        case 'Out for Delivery': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
                         case 'Completed': return 'bg-green-100 text-green-800 border-green-200';
                         default: return 'bg-gray-100 text-gray-800 border-gray-200';
                     }
