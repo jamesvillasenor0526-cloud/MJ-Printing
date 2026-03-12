@@ -16,10 +16,11 @@
                 extend: {
                     colors: {
                         brand: {
-                            DEFAULT: '#319F43', // MJ Green
-                            hover: '#288A3A',
-                            light: '#EAF7EC',
-                            red: '#ED1C24'      // MJ Red
+                            DEFAULT: '#E11D2E', // MJ Red (logo)
+                            hover: '#C51626',
+                            light: '#FDE8EA',
+                            dark: '#0B0B0F',
+                            red: '#E11D2E'
                         }
                     },
                     fontFamily: {
@@ -41,15 +42,9 @@
 
     <nav class="bg-white shadow-sm sticky top-0 z-50" x-data="{ open: false }">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16 sm:h-20">
+            <div class="flex justify-between h-20 sm:h-24">
                 <a href="index.html" class="flex items-center group">
-                    <div class="flex flex-col justify-center leading-none">
-                        <div class="flex items-baseline">
-                            <span
-                                class="text-3xl font-extrabold text-brand tracking-tighter group-hover:scale-105 transition-transform">MJ</span>
-                            <span class="text-2xl font-bold text-black italic ml-1">PRINT</span>
-                        </div>
-                    </div>
+                    <img src="logo.png" alt="MJ Print Advertisement" class="h-14 sm:h-20 w-auto" />
                 </a>
 
                 <div class="hidden md:flex items-center space-x-8">
@@ -163,7 +158,7 @@
             Stories</h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-20" id="reviews-container">
-            <template x-for="review in reviews" :key="review.id">
+            <template x-for="review in reviews" :key="review._id || review.id">
                 <div class="bg-white p-8 rounded-2xl shadow-md border border-gray-100 flex flex-col h-full">
                     <div class="flex text-yellow-400 mb-4">
                         <template x-for="i in 5">
@@ -237,13 +232,13 @@
                                     <div class="space-y-4">
                                         <div>
                                             <label class="block text-sm font-medium text-gray-700">Your Name</label>
-                                            <input type="text" x-model="newReview.name" required
+                                            <input type="text" x-model="newReview.name" required maxlength="100"
                                                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand focus:border-brand sm:text-sm">
                                         </div>
 
                                         <div>
                                             <label class="block text-sm font-medium text-gray-700">Role / Title</label>
-                                            <input type="text" x-model="newReview.role"
+                                            <input type="text" x-model="newReview.role" maxlength="50"
                                                 placeholder="e.g. Regular Customer"
                                                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand focus:border-brand sm:text-sm">
                                         </div>
@@ -266,9 +261,54 @@
                                         </div>
 
                                         <div>
-                                            <label class="block text-sm font-medium text-gray-700">Review</label>
-                                            <textarea x-model="newReview.text" required rows="3"
+                                            <label class="block text-sm font-medium text-gray-700">Review <span
+                                                    class="text-gray-400 text-xs">(max 500 characters)</span></label>
+                                            <textarea x-model="newReview.text" required rows="3" maxlength="500"
                                                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand focus:border-brand sm:text-sm"></textarea>
+                                            <p class="text-xs text-gray-400 mt-1"
+                                                x-text="newReview.text.length + '/500 characters'"></p>
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">Upload Image <span
+                                                    class="text-gray-400 text-xs">(optional)</span></label>
+                                            <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-brand transition-colors"
+                                                :class="newReview.image ? 'border-brand' : ''">
+                                                <div class="space-y-1 text-center">
+                                                    <template x-if="newReview.image">
+                                                        <div class="mb-3">
+                                                            <img :src="newReview.image"
+                                                                class="mx-auto h-32 w-auto object-cover rounded-lg">
+                                                            <button type="button"
+                                                                @click="newReview.image = null; newReview.imageFile = null"
+                                                                class="mt-2 text-sm text-red-600 hover:text-red-800">Remove
+                                                                image</button>
+                                                        </div>
+                                                    </template>
+                                                    <template x-if="!newReview.image">
+                                                        <div>
+                                                            <svg class="mx-auto h-12 w-12 text-gray-400"
+                                                                stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                                                <path
+                                                                    d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                                                    stroke-width="2" stroke-linecap="round"
+                                                                    stroke-linejoin="round" />
+                                                            </svg>
+                                                            <div class="flex text-sm text-gray-600 justify-center">
+                                                                <label for="file-upload"
+                                                                    class="relative cursor-pointer bg-white rounded-md font-medium text-brand hover:text-brand-hover focus-within:outline-none">
+                                                                    <span>Upload a file</span>
+                                                                    <input id="file-upload" name="file-upload"
+                                                                        type="file" accept="image/*" class="sr-only"
+                                                                        @change="handleImageUpload($event)">
+                                                                </label>
+                                                                <p class="pl-1">or drag and drop</p>
+                                                            </div>
+                                                            <p class="text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -305,31 +345,6 @@
             </div>
         </div>
 
-        <!-- Trusted By Section (Simplified) -->
-        <div class="text-center">
-            <p class="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-8">Trusted Partners</p>
-            <div
-                class="flex flex-wrap justify-center gap-8 md:gap-16 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
-                <!-- Placeholders for logos -->
-                <div class="flex items-center space-x-2">
-                    <div class="w-8 h-8 bg-gray-300 rounded-full"></div>
-                    <span class="text-xl font-bold text-gray-500">CityHigh</span>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <div class="w-8 h-8 bg-gray-300 rounded-full"></div>
-                    <span class="text-xl font-bold text-gray-500">LocalCafe</span>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <div class="w-8 h-8 bg-gray-300 rounded-full"></div>
-                    <span class="text-xl font-bold text-gray-500">TechHub</span>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <div class="w-8 h-8 bg-gray-300 rounded-full"></div>
-                    <span class="text-xl font-bold text-gray-500">DesignCo</span>
-                </div>
-            </div>
-        </div>
-
     </div>
 
     <!-- Footer -->
@@ -337,8 +352,7 @@
         <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
             <div class="md:flex md:items-center md:justify-between">
                 <div class="flex justify-center md:justify-start">
-                    <span class="text-2xl font-extrabold text-white tracking-tighter">MJ</span>
-                    <span class="text-xl font-bold text-gray-400 italic ml-1">PRINT</span>
+                    <img src="logo.png" alt="MJ Print Advertisement" class="h-10 w-auto" />
                 </div>
                 <div class="mt-8 md:mt-0 flex space-x-6 justify-center md:justify-end">
                     <a href="file-guide.html" class="text-gray-400 hover:text-white transition-colors">File Guide</a>
@@ -456,7 +470,9 @@
                     name: '',
                     role: '',
                     rating: 5,
-                    text: ''
+                    text: '',
+                    image: null,
+                    imageFile: null
                 },
 
                 async init() {
@@ -477,14 +493,45 @@
                     }
                 },
 
+                handleImageUpload(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    // Validate file type
+                    if (!file.type.startsWith('image/')) {
+                        alert('Please select an image file');
+                        return;
+                    }
+
+                    // Validate file size (5MB)
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('File size must be less than 5MB');
+                        return;
+                    }
+
+                    this.newReview.imageFile = file;
+
+                    // Create preview
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.newReview.image = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                },
+
                 async submitReview() {
                     if (!this.newReview.name || !this.newReview.text) {
                         alert('Please fill in required fields');
                         return;
                     }
 
+                    if (this.newReview.text.length > 500) {
+                        alert('Review must be 500 characters or less');
+                        return;
+                    }
+
                     try {
-                        await ReviewsAPI.create(this.newReview.rating, this.newReview.text);
+                        await ReviewsAPI.create(this.newReview.rating, this.newReview.text, null, this.newReview.imageFile);
 
                         // Refresh reviews
                         this.reviews = await ReviewsAPI.getAll();
@@ -493,6 +540,8 @@
                         this.showModal = false;
                         this.newReview.text = '';
                         this.newReview.role = '';
+                        this.newReview.image = null;
+                        this.newReview.imageFile = null;
 
                         // Show success notification
                         window.dispatchEvent(new CustomEvent('notify', {
@@ -524,4 +573,4 @@
     </script>
 </body>
 
-</html>
+</html>""  

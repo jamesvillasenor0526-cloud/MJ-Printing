@@ -1,21 +1,31 @@
 document.addEventListener('alpine:init', () => {
+    // Maximum quantity allowed per item
+    const MAX_QUANTITY_PER_ITEM = 100;
+
     Alpine.store('cart', {
         items: [],
         deliveryMethod: 'delivery', // 'delivery' or 'pickup'
+        paymentMethod: 'gcash', // gcash only
+        paymentType: 'full', // 'full' or 'downpayment'
+
+        // Dynamic key getters based on logged in user
+        _getUserPrefix() {
+            if (typeof getCurrentUserFromToken === 'function') {
+                const user = getCurrentUserFromToken();
+                if (user && user.id) return user.id;
+            }
+            return 'guest';
+        },
+        get cartKey() { return `mj_cart_${this._getUserPrefix()}`; },
+        get deliveryKey() { return `mj_deliveryMethod_${this._getUserPrefix()}`; },
+        get paymentMethodKey() { return `mj_paymentMethod_${this._getUserPrefix()}`; },
+        get paymentTypeKey() { return `mj_paymentType_${this._getUserPrefix()}`; },
 
         init() {
-            // Auto-wipe stale data from older versions
-            if (localStorage.getItem('mj_cart_version') !== '11') {
-                console.log('[Cart] Wiping local storage for clean V11 migration.');
-                localStorage.removeItem('mj_cart');
-                localStorage.removeItem('mj_deliveryMethod');
-                localStorage.setItem('mj_cart_version', '11');
-            }
-
-            // Load from localStorage if available
-            if (localStorage.getItem('mj_cart')) {
+            // Load from localStorage if available using dynamic keys
+            if (localStorage.getItem(this.cartKey)) {
                 try {
-                    const saved = JSON.parse(localStorage.getItem('mj_cart'));
+                    const saved = JSON.parse(localStorage.getItem(this.cartKey));
                     // Ensure every item has a valid string id
                     this.items = (Array.isArray(saved) ? saved : []).map(item => ({
                         ...item,
@@ -26,14 +36,22 @@ document.addEventListener('alpine:init', () => {
                     this.items = [];
                 }
             }
-            if (localStorage.getItem('mj_deliveryMethod')) {
-                this.deliveryMethod = localStorage.getItem('mj_deliveryMethod');
+            if (localStorage.getItem(this.deliveryKey)) {
+                this.deliveryMethod = localStorage.getItem(this.deliveryKey);
+            }
+            if (localStorage.getItem(this.paymentMethodKey)) {
+                this.paymentMethod = localStorage.getItem(this.paymentMethodKey);
+            }
+            if (localStorage.getItem(this.paymentTypeKey)) {
+                this.paymentType = localStorage.getItem(this.paymentTypeKey);
             }
 
             // Watch for changes and save to localStorage
             Alpine.effect(() => {
-                localStorage.setItem('mj_cart', JSON.stringify(this.items));
-                localStorage.setItem('mj_deliveryMethod', this.deliveryMethod);
+                localStorage.setItem(this.cartKey, JSON.stringify(this.items));
+                localStorage.setItem(this.deliveryKey, this.deliveryMethod);
+                localStorage.setItem(this.paymentMethodKey, this.paymentMethod);
+                localStorage.setItem(this.paymentTypeKey, this.paymentType);
             });
         },
 
@@ -41,6 +59,7 @@ document.addEventListener('alpine:init', () => {
             // Normalize for comparison
             const newName = (item.name || '').trim();
             const newDetails = (item.details || '').trim();
+            const newQuantity = item.quantity || 1;
 
             // Find existing item with matching name AND details
             const existingIndex = this.items.findIndex(i =>
@@ -49,15 +68,27 @@ document.addEventListener('alpine:init', () => {
             );
 
             if (existingIndex !== -1) {
+                const currentQty = this.items[existingIndex].quantity || 0;
+                const totalQty = currentQty + newQuantity;
+
+                // Check quantity limit
+                if (totalQty > MAX_QUANTITY_PER_ITEM) {
+                    window.dispatchEvent(new CustomEvent('notify', {
+                        detail: { message: `Maximum quantity limit is ${MAX_QUANTITY_PER_ITEM} per item`, type: 'error' }
+                    }));
+                    return;
+                }
+
                 // Build new array for Alpine reactivity
                 const updated = [];
                 for (let idx = 0; idx < this.items.length; idx++) {
                     if (idx === existingIndex) {
                         updated.push({
                             ...this.items[idx],
-                            quantity: this.items[idx].quantity + (item.quantity || 1),
+                            quantity: totalQty,
                             file: item.file || this.items[idx].file,
                             imagePreview: item.imagePreview || this.items[idx].imagePreview,
+                            image: item.image || this.items[idx].image || '',
                             price: item.price || this.items[idx].price
                         });
                     } else {
@@ -66,14 +97,23 @@ document.addEventListener('alpine:init', () => {
                 }
                 this.items = updated;
             } else {
+                // Check initial quantity
+                if (newQuantity > MAX_QUANTITY_PER_ITEM) {
+                    window.dispatchEvent(new CustomEvent('notify', {
+                        detail: { message: `Maximum quantity limit is ${MAX_QUANTITY_PER_ITEM} per item`, type: 'error' }
+                    }));
+                    return;
+                }
+
                 const newItem = {
                     id: 'cart_' + Date.now() + '_' + Math.random().toString(36).slice(2),
                     name: newName,
                     details: newDetails,
                     file: item.file || '',
                     imagePreview: item.imagePreview || null,
+                    image: item.image || '',
                     price: item.price || 0,
-                    quantity: item.quantity || 1
+                    quantity: newQuantity
                 };
                 // Spread for reactivity
                 this.items = [...this.items, newItem];
@@ -91,6 +131,12 @@ document.addEventListener('alpine:init', () => {
 
         updateQuantity(id, newQty) {
             if (newQty < 1) return;
+            if (newQty > MAX_QUANTITY_PER_ITEM) {
+                window.dispatchEvent(new CustomEvent('notify', {
+                    detail: { message: `Maximum quantity limit is ${MAX_QUANTITY_PER_ITEM} per item`, type: 'error' }
+                }));
+                return;
+            }
             this.items = this.items.map(item => {
                 if (String(item.id) === String(id)) {
                     return { ...item, quantity: newQty };
@@ -102,12 +148,14 @@ document.addEventListener('alpine:init', () => {
         clear() {
             this.items = [];
             this.deliveryMethod = 'delivery';
-            localStorage.removeItem('mj_cart');
-            localStorage.removeItem('mj_deliveryMethod');
+            localStorage.removeItem(this.cartKey);
+            localStorage.removeItem(this.deliveryKey);
+            localStorage.removeItem(this.paymentMethodKey);
+            localStorage.removeItem(this.paymentTypeKey);
         },
 
         get count() {
-            return this.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+            return this.items.length;
         },
 
         get subtotal() {
@@ -224,12 +272,10 @@ document.addEventListener('alpine:init', () => {
 
             this.user = null;
 
-            // Clear local cart data immediately upon logout
-            const cartStore = Alpine.store('cart');
-            if (cartStore) {
-                cartStore.clear();
-            }
-
+            // We do not want to clear the cart visually by setting items = [], 
+            // because Alpine.effect will immediately trigger and overwrite their saved cart with [] in localStorage before the page reloads.
+            // Since the page reloads to index.html immediately, they won't see their items anyway, 
+            // and upon reload, _getUserPrefix() evaluates to 'guest', loading a separate empty guest cart.
             window.location.href = 'index.html';
         }
     });

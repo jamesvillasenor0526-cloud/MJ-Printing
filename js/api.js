@@ -1,6 +1,8 @@
 // API Helper Library for MJ Print Services
-// Base URL for the backend API
-const API_URL = 'http://localhost:5000/api';
+// Base URL for backend API - dynamically detects current host
+const API_URL = (window.location.protocol === 'file:')
+    ? 'http://localhost:5000/api'
+    : window.location.origin + '/api';
 
 // Store JWT token in localStorage with context awareness
 const TokenManager = {
@@ -50,12 +52,24 @@ async function apiRequest(endpoint, options = {}) {
 
     try {
         const response = await fetch(`${API_URL}${endpoint}`, config);
-        const data = await response.json();
 
+        // Check if response is OK before parsing JSON
         if (!response.ok) {
-            throw new Error(data.message || 'API request failed');
+            console.error('Response not OK:', response.status, response.statusText);
+            let errorMessage = `API request failed: ${response.status}`;
+            try {
+                const data = await response.json();
+                if (data.message) {
+                    errorMessage = data.message;
+                }
+            } catch (parseError) {
+                // If JSON parsing fails, use status text
+                errorMessage = `API request failed: ${response.status} ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
         }
 
+        const data = await response.json();
         return data;
     } catch (error) {
         console.error('API Error:', error);
@@ -209,7 +223,7 @@ const UsersAPI = {
 
 // Orders API
 const OrdersAPI = {
-    create: async (orderData, files = []) => {
+    create: async (orderData, files = [], paymentProofFile = null) => {
         const formData = new FormData();
 
         // Add order data
@@ -219,12 +233,19 @@ const OrdersAPI = {
         formData.append('total', orderData.total);
         formData.append('address', orderData.address);
         formData.append('deliveryMethod', orderData.deliveryMethod);
+        formData.append('paymentMethod', orderData.paymentMethod || 'gcash');
+        formData.append('paymentType', orderData.paymentType || 'full');
         formData.append('phone', orderData.phone);
 
         // Add files
         files.forEach(file => {
             formData.append('files', file);
         });
+
+        // Add payment proof if available
+        if (paymentProofFile) {
+            formData.append('paymentProof', paymentProofFile);
+        }
 
         return await apiRequest('/orders', {
             method: 'POST',
@@ -279,6 +300,17 @@ const OrdersAPI = {
         return await apiRequest(`/orders/admin/${id}`, {
             method: 'DELETE'
         });
+    },
+
+    uploadProof: async (id, file) => {
+        console.log('OrdersAPI.uploadProof called with id:', id, 'file:', file);
+        const formData = new FormData();
+        formData.append('proof', file);
+        console.log('FormData prepared, calling apiRequest');
+        return await apiRequest(`/orders/admin/${id}/proof`, {
+            method: 'PUT',
+            body: formData
+        });
     }
 };
 
@@ -289,7 +321,18 @@ const ReviewsAPI = {
             .then(res => res.json());
     },
 
-    create: async (rating, text, orderId) => {
+    create: async (rating, text, orderId, imageFile = null) => {
+        if (imageFile) {
+            const formData = new FormData();
+            formData.append('rating', rating);
+            formData.append('text', text);
+            if (orderId) formData.append('orderId', orderId);
+            formData.append('image', imageFile);
+            return await apiRequest('/reviews', {
+                method: 'POST',
+                body: formData
+            });
+        }
         return await apiRequest('/reviews', {
             method: 'POST',
             body: JSON.stringify({ rating, text, orderId })

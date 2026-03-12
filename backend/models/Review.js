@@ -9,7 +9,7 @@ const reviewSchema = new mongoose.Schema({
     order: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Order',
-        required: true
+        default: null
     },
     products: [{
         name: String
@@ -29,6 +29,10 @@ const reviewSchema = new mongoose.Schema({
         required: true
     },
     reply: {
+        type: String,
+        default: ''
+    },
+    image: {
         type: String,
         default: ''
     },

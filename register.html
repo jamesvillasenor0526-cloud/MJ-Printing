@@ -13,10 +13,11 @@
                 extend: {
                     colors: {
                         brand: {
-                            DEFAULT: '#319F43', // MJ Green
-                            hover: '#288A3A',
-                            light: '#EAF7EC',
-                            red: '#ED1C24'
+                            DEFAULT: '#E11D2E', // MJ Red (logo)
+                            hover: '#C51626',
+                            light: '#FDE8EA',
+                            dark: '#0B0B0F',
+                            red: '#E11D2E'
                         }
                     },
                     fontFamily: {
@@ -44,11 +45,8 @@
 <body class="bg-gray-50 flex flex-col justify-center min-h-screen py-12 sm:px-6 lg:px-8" x-data="registerApp()">
 
     <div class="sm:mx-auto sm:w-full sm:max-w-md">
-        <a href="index.html" class="flex justify-center mb-6">
-            <div class="flex items-baseline">
-                <span class="text-4xl font-extrabold text-brand tracking-tighter">MJ</span>
-                <span class="text-3xl font-bold text-black italic ml-1">PRINT</span>
-            </div>
+        <a href="index.html" class="flex justify-center mb-8">
+            <img src="logo.png" alt="MJ Print Advertisement" class="h-16 w-auto" />
         </a>
         <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">Create your account</h2>
         <p class="mt-2 text-center text-sm text-gray-600">
@@ -63,33 +61,37 @@
                 <div>
                     <label for="name" class="block text-sm font-medium text-gray-700">Full Name</label>
                     <div class="mt-1">
-                        <input id="name" name="name" type="text" required x-model="name"
+                        <input id="name" name="name" type="text" required x-model="name" maxlength="100"
                             class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand focus:border-brand sm:text-sm"
                             placeholder="Full Name">
                     </div>
                 </div>
 
                 <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email address <span
+                            class="text-gray-400 text-xs">(verification required)</span></label>
                     <div class="mt-1">
                         <input id="email" name="email" type="email" autocomplete="email" required x-model="email"
                             class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand focus:border-brand sm:text-sm"
                             placeholder="Email address">
                     </div>
+                    <p class="text-xs text-gray-500 mt-1">A verification link will be sent to this email.</p>
                 </div>
 
                 <div>
                     <label for="phone" class="block text-sm font-medium text-gray-700">Phone Number</label>
                     <div class="mt-1">
                         <input id="phone" name="phone" type="tel" required x-model="phone" placeholder="Phone Number"
+                            maxlength="15"
                             class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand focus:border-brand sm:text-sm">
                     </div>
                 </div>
 
                 <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Password <span
+                            class="text-gray-400 text-xs">(min 6 characters)</span></label>
                     <div class="mt-1">
-                        <input id="password" name="password" type="password" required x-model="password"
+                        <input id="password" name="password" type="password" required x-model="password" minlength="6"
                             class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand focus:border-brand sm:text-sm"
                             placeholder="Password">
                     </div>
@@ -137,18 +139,26 @@
                         return;
                     }
 
+                    // Check password length
+                    if (this.password.length < 6) {
+                        this.error = 'Password must be at least 6 characters.';
+                        return;
+                    }
+
                     try {
-                        const response = await AuthAPI.register({
+                        await AuthAPI.register({
                             name: this.name,
                             email: this.email,
                             phone: this.phone,
                             password: this.password
                         });
 
-                        // AuthAPI automatically stores the token
+                        // Show verification message instead of redirect
+                        this.error = '';
+                        alert('Registration successful! A verification link has been sent to your email. Please check your inbox and verify your account before logging in.');
 
-                        // Redirect to profile
-                        window.location.href = 'profile.html';
+                        // Redirect to login
+                        window.location.href = 'login.html';
                     } catch (err) {
                         this.error = err.message || 'Registration failed. Please try again.';
                     }
@@ -158,4 +168,4 @@
     </script>
 </body>
 
-</html>
+</html>""  

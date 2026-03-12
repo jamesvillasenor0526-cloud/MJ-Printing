@@ -23,14 +23,14 @@ const upload = multer({
     storage: storage,
     limits: { fileSize: parseInt(process.env.MAX_FILE_SIZE) || 10485760 }, // 10MB default
     fileFilter: (req, file, cb) => {
-        const allowedTypes = /jpeg|jpg|png|gif|pdf|ai|psd|svg|doc|docx/;
+        const allowedTypes = /jpeg|jpg|png|gif|pdf|ai|psd|svg|doc|docx/i;
         const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
         const mimetype = allowedTypes.test(file.mimetype);
 
         if (extname && mimetype) {
             return cb(null, true);
         } else {
-            cb(new Error('Invalid file type'));
+            cb(new Error('Invalid file type. Only images and documents are allowed.'));
         }
     }
 });
@@ -40,7 +40,7 @@ const upload = multer({
 // @access  Private
 router.post('/', protect, upload.array('files', 10), async (req, res) => {
     try {
-        const { items, subtotal, shippingFee, total, address, phone, deliveryMethod } = req.body;
+        const { items, subtotal, shippingFee, total, address, phone, deliveryMethod, paymentMethod, paymentType } = req.body;
 
         // Parse items if it's a string, or default to empty array
         let parsedItems = [];
@@ -65,6 +65,28 @@ router.post('/', protect, upload.array('files', 10), async (req, res) => {
             });
         }
 
+        // Validate prices - calculate expected total server-side
+        const shippingFeeValue = parseFloat(shippingFee) || 20;
+        const calculatedSubtotal = parsedItems.reduce((sum, item) => {
+            const price = parseFloat(item.price) || 0;
+            const qty = parseInt(item.quantity) || 1;
+            return sum + (price * qty);
+        }, 0);
+        const calculatedTotal = calculatedSubtotal + shippingFeeValue;
+        const submittedTotal = parseFloat(total);
+
+        // Allow small floating point differences, but reject significant mismatches
+        if (Math.abs(calculatedTotal - submittedTotal) > 1) {
+            return res.status(400).json({
+                message: 'Invalid order total. Prices may have been tampered with.',
+                expected: calculatedTotal.toFixed(2),
+                received: submittedTotal.toFixed(2)
+            });
+        }
+
+        const totalAmount = submittedTotal;
+        const downpaymentAmount = (paymentType === 'downpayment') ? totalAmount * 0.5 : 0;
+
         const order = await Order.create({
             user: req.user._id,
             customer: req.user.name,
@@ -72,10 +94,13 @@ router.post('/', protect, upload.array('files', 10), async (req, res) => {
             phone: phone || req.user.phone,
             address: address,
             deliveryMethod: deliveryMethod || 'delivery',
+            paymentMethod: paymentMethod || 'gcash',
+            paymentType: paymentType || 'full',
+            downpaymentAmount: downpaymentAmount,
             items: parsedItems,
-            subtotal: parseFloat(subtotal),
-            shippingFee: parseFloat(shippingFee) || 20,
-            total: parseFloat(total)
+            subtotal: calculatedSubtotal,
+            shippingFee: shippingFeeValue,
+            total: totalAmount
         });
 
         res.status(201).json(order);
@@ -155,6 +180,46 @@ router.put('/admin/:id/status', protect, admin, async (req, res) => {
     }
 });
 
+// @route   PUT /api/orders/admin/:id/proof
+// @desc    Upload proof of delivery/payment (admin)
+// @access  Private/Admin
+router.put('/admin/:id/proof', protect, admin, (req, res, next) => {
+    upload.single('proof')(req, res, (err) => {
+        if (err) {
+            console.error('Multer error:', err);
+            return res.status(400).json({ message: err.message || 'File upload failed' });
+        }
+        next();
+    });
+}, async (req, res) => {
+    try {
+        console.log('Proof upload endpoint called');
+        console.log('Order ID:', req.params.id);
+        console.log('File:', req.file);
+
+        const order = await Order.findById(req.params.id);
+
+        if (!order) {
+            console.log('Order not found:', req.params.id);
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
+        if (!req.file) {
+            console.log('No file uploaded');
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+
+        order.proof = `/uploads/${req.file.filename}`;
+        await order.save();
+        console.log('Proof saved:', order.proof);
+
+        res.json({ message: 'Proof uploaded successfully', proof: order.proof });
+    } catch (error) {
+        console.error('Proof upload error:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // @route   DELETE /api/orders/admin/:id
 // @desc    Delete order (admin)
 // @access  Private/Admin
@@ -180,7 +245,8 @@ router.delete('/admin/:id', protect, admin, async (req, res) => {
 // @access  Public
 router.get('/track/:referenceId', async (req, res) => {
     try {
-        const order = await Order.findOne({ referenceId: req.params.referenceId });
+        const order = await Order.findOne({ referenceId: req.params.referenceId })
+            .select('referenceId status items date deliveryMethod paymentMethod paymentType total subtotal shippingFee');
 
         if (!order) {
             return res.status(404).json({ message: 'Order not found' });

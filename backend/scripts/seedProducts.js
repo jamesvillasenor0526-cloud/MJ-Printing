@@ -9,7 +9,15 @@ const products = [
         name: 'Tarpaulin / Banner',
         category: 'Large Format',
         description: 'Durable tarpaulin printing for indoor and outdoor use.',
-        basePrice: 120, // Per sq ft approx, base rate
+        basePrice: 120,
+        variants: [
+            { name: '2x3 ft', price: 340 },
+            { name: '3x4 ft', price: 680 },
+            { name: '4x6 ft', price: 1200 },
+            { name: '5x8 ft', price: 2000 },
+            { name: '6x10 ft', price: 3000 },
+            { name: 'Custom', price: 0 }
+        ],
         options: {
             sizes: ['2x3 ft', '3x4 ft', '4x6 ft', '5x8 ft', '6x10 ft', 'Custom'],
             materials: ['Standard 10oz', 'Thick 13oz', 'Blockout'],
@@ -22,6 +30,13 @@ const products = [
         category: 'Large Format',
         description: 'High-quality posters for marketing or events.',
         basePrice: 80,
+        variants: [
+            { name: 'A3 (11.7x16.5)', price: 180 },
+            { name: 'A2 (16.5x23.4)', price: 350 },
+            { name: 'A1 (23.4x33.1)', price: 550 },
+            { name: 'A0 (33.1x46.8)', price: 900 },
+            { name: 'Custom', price: 0 }
+        ],
         options: {
             sizes: ['A3 (11.7x16.5)', 'A2 (16.5x23.4)', 'A1 (23.4x33.1)', 'A0 (33.1x46.8)', 'Custom'],
             materials: ['Glossy Paper', 'Matte Paper', 'Photo Paper'],
@@ -34,6 +49,14 @@ const products = [
         category: 'Large Format',
         description: 'Custom cut vinyl stickers for branding.',
         basePrice: 150,
+        variants: [
+            { name: 'A4 Sheet', price: 250 },
+            { name: 'A3 Sheet', price: 400 },
+            { name: '1x1 ft', price: 300 },
+            { name: '2x2 ft', price: 800 },
+            { name: '3x3 ft', price: 1500 },
+            { name: 'Custom Cut', price: 0 }
+        ],
         options: {
             sizes: ['A4 Sheet', 'A3 Sheet', '1x1 ft', '2x2 ft', '3x3 ft', 'Custom Cut'],
             materials: ['Glossy Vinyl', 'Matte Vinyl', 'Transparent', 'Reflective'],

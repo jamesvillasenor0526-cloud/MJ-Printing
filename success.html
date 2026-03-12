@@ -7,7 +7,8 @@
     <title>Request Submitted - MJ Print Services</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="js/store.js?v=10"></script>
+    <script src="js/api.js"></script>
+    <script src="js/store.js?v=11"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <script>
@@ -16,10 +17,11 @@
                 extend: {
                     colors: {
                         brand: {
-                            DEFAULT: '#319F43', // MJ Green
-                            hover: '#288A3A',
-                            light: '#EAF7EC',
-                            red: '#ED1C24'      // MJ Red
+                            DEFAULT: '#E11D2E', // MJ Red (logo)
+                            hover: '#C51626',
+                            light: '#FDE8EA',
+                            dark: '#0B0B0F',
+                            red: '#E11D2E'
                         }
                     },
                     fontFamily: {
@@ -42,15 +44,9 @@
     <!-- Navbar -->
     <nav class="bg-white shadow-sm sticky top-0 z-50" x-data="{ open: false }">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16 sm:h-20">
+            <div class="flex justify-between h-20 sm:h-24">
                 <a href="index.html" class="flex items-center group">
-                    <div class="flex flex-col justify-center leading-none">
-                        <div class="flex items-baseline">
-                            <span
-                                class="text-3xl font-extrabold text-brand tracking-tighter group-hover:scale-105 transition-transform">MJ</span>
-                            <span class="text-2xl font-bold text-black italic ml-1">PRINT</span>
-                        </div>
-                    </div>
+                    <img src="logo.png" alt="MJ Print Advertisement" class="h-14 sm:h-20 w-auto" />
                 </a>
 
                 <div class="hidden md:flex items-center space-x-8">
@@ -128,8 +124,26 @@
 
     <!-- Main Content -->
     <div class="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" x-data="{
-        orderRef: new URLSearchParams(window.location.search).get('ref') || 'N/A'
-    }">
+        orderRef: new URLSearchParams(window.location.search).get('ref') || 'N/A',
+        order: null,
+        loading: true,
+        async loadOrder() {
+            try {
+                if (this.orderRef === 'N/A') return;
+                const response = await fetch(`/api/orders/track/${this.orderRef}`);
+                if (response.ok) {
+                    this.order = await response.json();
+                }
+            } catch (err) {
+                console.error('Failed to load order:', err);
+            } finally {
+                this.loading = false;
+            }
+        },
+        init() {
+            this.loadOrder();
+        }
+    }" x-init="init()">
         <div class="max-w-md w-full space-y-8 text-center">
             <div class="mx-auto flex items-center justify-center h-24 w-24 rounded-full bg-green-100">
                 <svg class="h-12 w-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -149,6 +163,72 @@
                     x-text="orderRef">Loading...</span>
             </div>
 
+            <!-- GCash Payment Instructions -->
+            <template x-if="order && order.paymentMethod === 'gcash'">
+                <div class="bg-blue-50 px-4 py-4 rounded-md border border-blue-200 mt-6">
+                    <div class="flex items-start gap-3">
+                        <svg class="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <div class="text-left">
+                            <h3 class="font-semibold text-blue-900 mb-2">GCash Payment Instructions</h3>
+                            <template x-if="order.paymentType === 'downpayment'">
+                                <p class="text-sm text-blue-800 mb-3">
+                                    Please transfer 50% down payment to our GCash account. We'll contact you shortly
+                                    with payment details.
+                                </p>
+                                <div class="bg-white rounded p-3 border border-blue-100 space-y-2">
+                                    <div class="flex justify-between">
+                                        <span class="text-sm text-gray-700">Amount Due Now (50%):</span>
+                                        <span class="text-sm font-bold text-blue-900"
+                                            x-text="'₱' + (order.total * 0.5).toLocaleString('en-US', {minimumFractionDigits: 2})">₱0.00</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-xs text-gray-500">Remaining (50%):</span>
+                                        <span class="text-xs text-gray-500"
+                                            x-text="'₱' + (order.total * 0.5).toLocaleString('en-US', {minimumFractionDigits: 2})">₱0.00</span>
+                                    </div>
+                                </div>
+                            </template>
+                            <template x-if="order.paymentType === 'full'">
+                                <p class="text-sm text-blue-800 mb-3">
+                                    Please transfer the full amount to our GCash account. We'll contact you shortly with
+                                    payment details.
+                                </p>
+                                <div class="bg-white rounded p-3 border border-blue-100">
+                                    <p class="text-sm font-mono text-gray-700">Full Amount: <span class="font-bold"
+                                            x-text="'₱' + order.total.toLocaleString('en-US', {minimumFractionDigits: 2})">₱0.00</span>
+                                    </p>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Estimated Processing Time -->
+            <div class="bg-amber-50 px-4 py-4 rounded-md border border-amber-200 mt-6">
+                <div class="flex items-start gap-3">
+                    <svg class="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <div class="text-left">
+                        <h3 class="font-semibold text-amber-900 mb-1">Estimated Processing Time</h3>
+                        <p class="text-sm text-amber-800">
+                            Standard orders are typically processed within <strong>2-5 business days</strong>.
+                            Large orders or custom items may require additional time.
+                            We'll notify you via email once your order is ready!
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+
+
             <div class="mt-8 space-y-3">
                 <a :href="'track.html?ref=' + orderRef"
                     class="w-full flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-full text-white bg-brand hover:bg-brand-hover md:text-lg shadow-lg hover:shadow-xl transition-all">
@@ -167,8 +247,7 @@
         <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
             <div class="md:flex md:items-center md:justify-between">
                 <div class="flex justify-center md:justify-start">
-                    <span class="text-2xl font-extrabold text-white tracking-tighter">MJ</span>
-                    <span class="text-xl font-bold text-gray-400 italic ml-1">PRINT</span>
+                    <img src="logo.png" alt="MJ Print Advertisement" class="h-10 w-auto" />
                 </div>
                 <div class="mt-8 md:mt-0 flex space-x-6 justify-center md:justify-end">
                     <a href="file-guide.html" class="text-gray-400 hover:text-white transition-colors">File Guide</a>
@@ -279,4 +358,4 @@
     <script src="js/chat-widget.js"></script>
 </body>
 
-</html>
+</html>""  

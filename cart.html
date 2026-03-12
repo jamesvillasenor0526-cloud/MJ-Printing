@@ -17,10 +17,11 @@
                 extend: {
                     colors: {
                         brand: {
-                            DEFAULT: '#319F43', // MJ Green
-                            hover: '#288A3A',
-                            light: '#EAF7EC',
-                            red: '#ED1C24'      // MJ Red
+                            DEFAULT: '#E11D2E', // MJ Red (logo)
+                            hover: '#C51626',
+                            light: '#FDE8EA',
+                            dark: '#0B0B0F',
+                            red: '#E11D2E'
                         }
                     },
                     fontFamily: {
@@ -46,15 +47,9 @@
 
     <nav class="bg-white shadow-sm sticky top-0 z-50" x-data="{ open: false }">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16 sm:h-20">
+            <div class="flex justify-between h-20 sm:h-24">
                 <a href="index.html" class="flex items-center group">
-                    <div class="flex flex-col justify-center leading-none">
-                        <div class="flex items-baseline">
-                            <span
-                                class="text-3xl font-extrabold text-brand tracking-tighter group-hover:scale-105 transition-transform">MJ</span>
-                            <span class="text-2xl font-bold text-black italic ml-1">PRINT</span>
-                        </div>
-                    </div>
+                    <img src="logo.png" alt="MJ Print Advertisement" class="h-14 sm:h-20 w-auto" />
                 </a>
 
                 <div class="hidden md:flex items-center space-x-8">
@@ -153,6 +148,33 @@
             },
             selectedAddressId: null,
             selectedItems: [],
+            paymentProof: null,
+            paymentProofFile: null,
+            paymentProofPreview: null,
+            
+            handlePaymentProof(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                if (!file.type.startsWith('image/')) {
+                    alert('Please select an image file');
+                    return;
+                }
+                
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('File size must be less than 5MB');
+                    return;
+                }
+                
+                this.paymentProofFile = file;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.paymentProofPreview = e.target.result;
+                    this.paymentProof = file.name;
+                };
+                reader.readAsDataURL(file);
+            },
 
             get allSelected() {
                 return $store.cart.items.length > 0 && this.selectedItems.length === $store.cart.items.length;
@@ -199,6 +221,21 @@
 
             get selectedTotal() {
                 return this.selectedSubtotal + this.selectedShipping;
+            },
+
+            get paymentAmount() {
+                if ($store.cart.paymentType === 'downpayment') {
+                    return this.selectedTotal * 0.5;
+                }
+                return this.selectedTotal;
+            },
+
+            get downpaymentAmount() {
+                return this.selectedTotal * 0.5;
+            },
+
+            get remainingAmount() {
+                return this.selectedTotal - this.downpaymentAmount;
             },
 
             async init() {
@@ -318,6 +355,7 @@
                         name: item.name,
                         quantity: item.quantity,
                         price: item.price,
+                        image: item.image || '',
                         filePath: item.file || '',
                         fileUrl: '' 
                     }));
@@ -329,6 +367,8 @@
                         total: this.selectedTotal,
                         address: $store.cart.deliveryMethod === 'pickup' ? 'Pickup at Store' : this.address,
                         deliveryMethod: $store.cart.deliveryMethod,
+                        paymentMethod: $store.cart.paymentMethod,
+                        paymentType: $store.cart.paymentType,
                         phone: this.phone || 'N/A',
                         customer: this.name,
                         email: this.email,
@@ -336,7 +376,7 @@
                     };
 
                     // Send to API
-                    const order = await OrdersAPI.create(orderData, []);
+                    const order = await OrdersAPI.create(orderData, [], this.paymentProofFile);
 
                     // Remove only the submitted items from cart
                     const submittedIds = this.selectedItems.slice();
@@ -411,7 +451,11 @@
                                 <img :src="item.imagePreview"
                                     class="h-20 w-20 object-cover rounded-lg flex-shrink-0 border border-gray-200">
                             </template>
-                            <template x-if="!item.imagePreview">
+                            <template x-if="!item.imagePreview && item.image">
+                                <img :src="item.image.startsWith('/') ? 'http://localhost:5000' + item.image : item.image"
+                                    class="h-20 w-20 object-cover rounded-lg flex-shrink-0 border border-gray-200">
+                            </template>
+                            <template x-if="!item.imagePreview && !item.image">
                                 <div
                                     class="h-20 w-20 bg-gray-100 rounded-lg flex items-center justify-center text-gray-500 flex-shrink-0">
                                     <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -443,7 +487,8 @@
                                             x-text="item.quantity"></span>
                                         <button type="button"
                                             @click="$store.cart.updateQuantity(item.id, item.quantity + 1)"
-                                            class="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors">
+                                            :disabled="item.quantity >= 100"
+                                            class="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M12 4v16m8-8H4"></path>
@@ -623,6 +668,118 @@
                                     class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-brand focus:border-brand outline-none"
                                     placeholder="Any special instructions, deadlines, or specific text to print..."></textarea>
                             </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+                                <div class="flex items-center p-3 border border-blue-200 rounded-lg bg-blue-50">
+                                    <svg class="w-5 h-5 text-blue-600 mr-2 flex-shrink-0" fill="none"
+                                        stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <span class="text-sm font-semibold text-blue-900">GCash</span>
+                                </div>
+                                <input type="hidden" x-model="$store.cart.paymentMethod" value="gcash">
+
+                                <!-- GCash QR Code Section -->
+                                <div class="mt-4 bg-white p-4 rounded-lg border border-gray-200">
+                                    <p class="text-sm font-semibold text-gray-700 mb-3">Scan to Pay via GCash</p>
+                                    <div class="flex justify-center mb-3">
+                                        <!-- Placeholder for GCash QR Code - In production, replace with actual QR -->
+                                        <div
+                                            class="w-40 h-40 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
+                                            <div class="text-center">
+                                                <svg class="w-12 h-12 mx-auto text-gray-400" fill="none"
+                                                    stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h2M4 12h2m-2 4h.01M12 20h.01M4 4h2v2H4V4zm4 4h2v2H8V8zm0 4h2v2H8v-2zm0-8h2v2H8V4zm4 4h2v2h-2V8zm0 4h2v2h-2v-2z">
+                                                    </path>
+                                                </svg>
+                                                <p class="text-xs text-gray-500 mt-1">GCash QR</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-gray-500 text-center">Account Number: <span
+                                            class="font-semibold">09XX-XXX-XXXX</span></p>
+                                    <p class="text-xs text-gray-500 text-center mt-1">Account Name: <span
+                                            class="font-semibold">MJ Print Services</span></p>
+
+                                    <!-- Proof of Payment Upload -->
+                                    <div class="mt-4 pt-4 border-t border-gray-200">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Upload Proof of
+                                            Payment</label>
+                                        <div class="flex justify-center px-6 pt-3 pb-3 border-2 border-dashed rounded-md hover:border-brand transition-colors"
+                                            :class="paymentProof ? 'border-brand bg-green-50' : 'border-gray-300'">
+                                            <div class="space-y-1 text-center">
+                                                <template x-if="paymentProof">
+                                                    <div class="mb-2">
+                                                        <img :src="paymentProofPreview"
+                                                            class="mx-auto h-24 w-auto object-contain rounded">
+                                                        <button type="button"
+                                                            @click="paymentProof = null; paymentProofFile = null"
+                                                            class="mt-2 text-xs text-red-600 hover:text-red-800">Remove</button>
+                                                    </div>
+                                                </template>
+                                                <template x-if="!paymentProof">
+                                                    <div>
+                                                        <svg class="mx-auto h-8 w-8 text-gray-400" stroke="currentColor"
+                                                            fill="none" viewBox="0 0 48 48">
+                                                            <path
+                                                                d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                                                stroke-width="2" stroke-linecap="round"
+                                                                stroke-linejoin="round" />
+                                                        </svg>
+                                                        <div class="flex text-sm text-gray-600 justify-center">
+                                                            <label for="proof-upload"
+                                                                class="relative cursor-pointer bg-white rounded-md font-medium text-brand hover:text-brand-hover">
+                                                                <span>Upload receipt</span>
+                                                                <input id="proof-upload" name="proof-upload" type="file"
+                                                                    accept="image/*" class="sr-only"
+                                                                    @change="handlePaymentProof($event)">
+                                                            </label>
+                                                        </div>
+                                                        <p class="text-xs text-gray-500">PNG, JPG up to 5MB</p>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Payment Type</label>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <label
+                                        class="flex items-start cursor-pointer p-3 border border-gray-300 rounded-lg hover:bg-brand/5 transition-colors"
+                                        :class="$store.cart.paymentType === 'full' ? 'bg-brand/5 border-brand' : ''">
+                                        <input type="radio" x-model="$store.cart.paymentType" value="full"
+                                            class="h-4 w-4 text-brand focus:ring-brand border-gray-300 mt-0.5 flex-shrink-0">
+                                        <div class="ml-3 flex-1">
+                                            <span class="block text-sm font-medium text-gray-900">Full Payment</span>
+                                            <span class="text-xs text-gray-500"
+                                                x-text="'₱' + selectedTotal.toLocaleString('en-US', {minimumFractionDigits: 2})">₱0.00</span>
+                                        </div>
+                                    </label>
+                                    <label
+                                        class="flex items-start cursor-pointer p-3 border border-gray-300 rounded-lg hover:bg-brand/5 transition-colors"
+                                        :class="$store.cart.paymentType === 'downpayment' ? 'bg-brand/5 border-brand' : ''">
+                                        <input type="radio" x-model="$store.cart.paymentType" value="downpayment"
+                                            class="h-4 w-4 text-brand focus:ring-brand border-gray-300 mt-0.5 flex-shrink-0">
+                                        <div class="ml-3 flex-1">
+                                            <span class="block text-sm font-medium text-gray-900">Down Payment
+                                                (50%)</span>
+                                            <span class="text-xs text-gray-500"
+                                                x-text="'₱' + downpaymentAmount.toLocaleString('en-US', {minimumFractionDigits: 2}) + ' now'">₱0.00
+                                                now</span>
+                                            <span class="text-xs text-gray-400"
+                                                x-text="'+ ₱' + remainingAmount.toLocaleString('en-US', {minimumFractionDigits: 2}) + ' later'">+
+                                                ₱0.00 later</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="mt-8 pt-6 border-t border-gray-100 space-y-2">
@@ -638,11 +795,27 @@
                                     x-text="$store.cart.deliveryMethod === 'pickup' ? '₱0.00' : '₱' + selectedShipping.toFixed(2)"></span>
                             </div>
                             <div
-                                class="flex justify-between text-xl font-extrabold text-gray-900 pt-2 border-t border-gray-100 mt-2">
+                                class="flex justify-between text-lg font-bold text-gray-900 pt-2 border-t border-gray-100 mt-2">
                                 <span>Total Estimate</span>
                                 <span
                                     x-text="'₱' + selectedTotal.toLocaleString('en-US', {minimumFractionDigits: 2})">₱0.00</span>
                             </div>
+
+                            <!-- Payment Amount Display -->
+                            <template x-if="$store.cart.paymentType === 'downpayment'">
+                                <div class="bg-blue-50 p-3 rounded-lg border border-blue-200 mt-3">
+                                    <div class="flex justify-between text-blue-900 font-semibold">
+                                        <span>Amount Due Today (50%)</span>
+                                        <span
+                                            x-text="'₱' + downpaymentAmount.toLocaleString('en-US', {minimumFractionDigits: 2})">₱0.00</span>
+                                    </div>
+                                    <div class="flex justify-between text-xs text-blue-700 mt-2">
+                                        <span>Remaining Balance</span>
+                                        <span
+                                            x-text="'₱' + remainingAmount.toLocaleString('en-US', {minimumFractionDigits: 2})">₱0.00</span>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
 
                         <button type="submit" :disabled="selectedItems.length === 0"
@@ -741,8 +914,7 @@
         <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
             <div class="md:flex md:items-center md:justify-between">
                 <div class="flex justify-center md:justify-start">
-                    <span class="text-2xl font-extrabold text-white tracking-tighter">MJ</span>
-                    <span class="text-xl font-bold text-gray-400 italic ml-1">PRINT</span>
+                    <img src="logo.png" alt="MJ Print Advertisement" class="h-10 w-auto" />
                 </div>
                 <div class="mt-8 md:mt-0 flex space-x-6 justify-center md:justify-end">
                     <a href="file-guide.html" class="text-gray-400 hover:text-white transition-colors">File Guide</a>

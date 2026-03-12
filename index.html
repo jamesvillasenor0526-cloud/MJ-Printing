@@ -16,10 +16,11 @@
                 extend: {
                     colors: {
                         brand: {
-                            DEFAULT: '#319F43', // MJ Green
-                            hover: '#288A3A',
-                            light: '#EAF7EC',
-                            red: '#ED1C24'      // MJ Red
+                            DEFAULT: '#E11D2E', // MJ Red (logo)
+                            hover: '#C51626',
+                            light: '#FDE8EA',
+                            dark: '#0B0B0F',
+                            red: '#E11D2E'
                         }
                     },
                     fontFamily: {
@@ -96,23 +97,16 @@
 
     <nav class="bg-white shadow-sm sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16 sm:h-20">
+            <div class="flex justify-between h-20 sm:h-24">
                 <a href="index.html" class="flex items-center group">
-                    <div class="flex flex-col justify-center leading-none">
-                        <div class="flex items-baseline">
-                            <span
-                                class="text-3xl font-extrabold text-brand tracking-tighter group-hover:scale-105 transition-transform">MJ</span>
-                            <span class="text-2xl font-bold text-black italic ml-1">PRINT</span>
-                        </div>
-                        <span
-                            class="text-[10px] font-bold text-brand tracking-widest uppercase sm:block hidden">Advertisement</span>
-                    </div>
+                    <img src="logo.png" alt="MJ Print Advertisement" class="h-14 sm:h-20 w-auto" />
                 </a>
 
                 <div class="hidden md:flex items-center space-x-8">
                     <a href="index.html" class="text-gray-900 font-bold text-brand">Home</a>
-                    <a href="portfolio.html" class="text-gray-500 hover:text-brand font-medium">Portfolio</a>
-                    <a href="reviews.html" class="text-gray-500 hover:text-brand font-medium">Reviews</a>
+                    <a href="about.html" class="text-gray-500 hover:text-brand font-medium">About</a>
+                    <a href="index.html#services" class="text-gray-500 hover:text-brand font-medium">Services</a>
+                    <a href="contact.html" class="text-gray-500 hover:text-brand font-medium">Contact</a>
 
                     <!-- Dynamic Auth Link -->
                     <template x-if="$store.auth.isLoggedIn">
@@ -152,17 +146,16 @@
         <div x-show="mobileMenuOpen" class="md:hidden bg-white border-t border-gray-100 shadow-xl" x-transition>
             <div class="px-4 pt-2 pb-4 space-y-2">
                 <a href="index.html"
-                    class="block px-4 py-3 text-base font-bold text-brand bg-green-50 rounded-lg">Home</a>
-                <a href="portfolio.html"
-                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Portfolio</a>
-                <a href="reviews.html"
-                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Reviews</a>
+                    class="block px-4 py-3 text-base font-bold text-brand bg-brand-light rounded-lg">Home</a>
+                <a href="about.html"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">About</a>
+                <a href="index.html#services"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Services</a>
+                <a href="contact.html"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Contact</a>
                 <a href="track.html"
                     class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Track
                     Order</a>
-                <a href="about.html"
-                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">About
-                    Us</a>
                 <a href="cart.html"
                     class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Cart
                     (<span x-text="$store.cart.count">0</span>)</a>
@@ -234,7 +227,12 @@
             },
             getIcon(category) {
                 // Return SVG based on category
-                return `<svg class='w-14 h-14' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 6h16M4 12h16M4 18h16'></path></svg>`; // Default
+                if (category === 'Large Format') return `<svg class='w-14 h-14' fill='currentColor' viewBox='0 0 24 24'><path d='M4 3h16a1 1 0 011 1v16a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1zm1 2v14h14V5H5z'/><path d='M7 9h10v2H7z' opacity='0.3'/><path d='M7 13h7v2H7z' opacity='0.3'/></svg>`;
+                if (category === 'Document Printing') return `<svg class='w-14 h-14' fill='currentColor' viewBox='0 0 24 24'><path d='M7 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H7zm0 2h10v16H7V4zm2 3h6v2H9V7zm0 4h6v2H9v-2zm0 4h4v2H9v-2z'/></svg>`;
+                if (category === 'Merchandise') return `<svg class='w-14 h-14' fill='currentColor' viewBox='0 0 24 24'><path d='M7 4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3V2h-2v2H7zm0 2h10v12H7V6zm2-2h2v2H9V4z'/><circle cx='9' cy='12' r='1.5'/><circle cx='15' cy='12' r='1.5'/></svg>`;
+                if (category === 'Photo Lab') return `<svg class='w-14 h-14' fill='currentColor' viewBox='0 0 24 24'><path d='M4 3h16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm1 2v12h14V5H5zm3 1a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm0 2a1 1 0 1 0 0 2 1 1 0 0 0 0-2z'/></svg>`;
+                if (category === 'Events') return `<svg class='w-14 h-14' fill='currentColor' viewBox='0 0 24 24'><path d='M7 2a2 2 0 0 0-2 2v2H3v2h2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8h2V6h-2V4a2 2 0 0 0-2-2H7zm0 2h10v10H7V4zm2 2v2h2V6H9zm4 0v2h2V6h-2z'/><path d='M6 16h12v2H6z' opacity='0.3'/></svg>`;
+                return `<svg class='w-14 h-14' fill='currentColor' viewBox='0 0 24 24'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z'/></svg>`;
             },
             getDescription(category) {
                  if (category === 'Large Format') return 'Tarpaulins, posters, signage, and more.';
@@ -287,13 +285,217 @@
         </div>
     </div>
 
+    <!-- Customer Reviews Section - Immediately on Homepage -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
+        x-data="{ homepageReviews: [], async init() { try { this.homepageReviews = await ReviewsAPI.getAll(); } catch(e) { console.error('Failed to load reviews', e); } } }">
+        <div class="text-center mb-10">
+            <h2 class="text-2xl font-bold text-gray-900">What Our Customers Say</h2>
+            <p class="text-gray-500 mt-2">Trusted by over 500+ clients</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <template x-for="review in homepageReviews.slice(0, 3)" :key="review._id || review.id">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex text-yellow-400 mb-3">
+                        <template x-for="i in 5">
+                            <svg class="w-4 h-4"
+                                :class="i <= review.rating ? 'fill-current' : 'text-gray-300 fill-current'"
+                                viewBox="0 0 20 20">
+                                <path
+                                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                        </template>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4"
+                        x-text="'"' + (review.text.length > 120 ? review.text.substring(0, 120) + ' ...' : review.text)
+                        + '"'"></p>
+                    <div class=" flex items-center">
+                    <div class="h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold"
+                        :class="review.colorClass || 'bg-blue-100 text-blue-700'"
+                        x-text="review.name ? review.name.split(' ').map(n => n[0]).join('').substring(0,2) : 'U'">
+                    </div>
+                    <div class="ml-2">
+                        <p class="text-sm font-bold text-gray-900" x-text="review.name"></p>
+                        <p class="text-xs text-gray-500" x-text="review.role || 'Customer'"></p>
+                    </div>
+                </div>
+        </div>
+        </template>
+    </div>
+
+    <div class="text-center">
+        <a href="reviews.html" class="inline-flex items-center text-brand font-medium hover:text-brand-hover">
+            View all reviews
+            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3">
+                </path>
+            </svg>
+        </a>
+    </div>
+    </div>
+
+    <!-- Services Section -->
+    <div class="bg-white border-t border-gray-200" id="services">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">Our Services</h2>
+                <p class="text-gray-500 mt-2 max-w-2xl mx-auto">Professional printing services tailored to your needs
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="text-center p-6">
+                    <div class="w-16 h-16 bg-brand-light rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01">
+                            </path>
+                        </svg>
+                    </div>
+                    <h3 class="font-bold text-gray-900 mb-2">Large Format</h3>
+                    <p class="text-sm text-gray-500">Tarpaulins, posters, banners, and signage</p>
+                </div>
+
+                <div class="text-center p-6">
+                    <div class="w-16 h-16 bg-brand-light rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                            </path>
+                        </svg>
+                    </div>
+                    <h3 class="font-bold text-gray-900 mb-2">Document Printing</h3>
+                    <p class="text-sm text-gray-500">Flyers, business cards, thesis, and more</p>
+                </div>
+
+                <div class="text-center p-6">
+                    <div class="w-16 h-16 bg-brand-light rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="font-bold text-gray-900 mb-2">Merchandise</h3>
+                    <p class="text-sm text-gray-500">Custom mugs, shirts, bags, and promo items</p>
+                </div>
+
+                <div class="text-center p-6">
+                    <div class="w-16 h-16 bg-brand-light rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                            </path>
+                        </svg>
+                    </div>
+                    <h3 class="font-bold text-gray-900 mb-2">Photo Lab</h3>
+                    <p class="text-sm text-gray-500">Photo prints, ID photos, and frames</p>
+                </div>
+            </div>
+
+            <div class="text-center mt-10">
+                <a href="portfolio.html"
+                    class="inline-block px-6 py-3 bg-brand text-white font-bold rounded-lg hover:bg-brand-hover transition-colors">View
+                    Our Portfolio</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Example Products Section -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="text-center mb-10">
+            <h2 class="text-2xl font-bold text-gray-900">Example Products</h2>
+            <p class="text-gray-500 mt-2">Browse our sample products when ordering or customizing</p>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4" x-data="{ exampleProducts: [
+            { name: 'T-Shirt', image: 't-shirtWhite.jpg', price: 350 },
+            { name: 'Mug', image: 'mugs.jpg', price: 180 },
+            { name: 'Tarpaulin', image: 'standee.jpg', price: 500 },
+            { name: 'ID Lanyard', image: 'schoolVest.jpg', price: 80 },
+            { name: 'Acrylic Medal', image: 'acrylic-medal.jpg', price: 120 },
+            { name: 'Ref Magnet', image: 'refMagnet.jpg', price: 15 }
+        ] }">
+            <template x-for="product in exampleProducts" :key="product.name">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                    @click="$store.auth.isLoggedIn ? window.location.href='index.html' : triggerLogin()">
+                    <div class="aspect-square bg-gray-100 relative overflow-hidden">
+                        <img :src="product.image" :alt="product.name" class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-3">
+                        <h4 class="font-bold text-sm text-gray-900" x-text="product.name"></h4>
+                        <p class="text-brand font-semibold text-sm" x-text="'₱' + product.price"></p>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <div class="text-center mt-8">
+            <p class="text-sm text-gray-500">Click any product to start customizing your order</p>
+        </div>
+    </div>
+
+    <!-- Benefits Section - Labor/Services Value -->
+    <div class="bg-gray-900 text-white py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold">Why Choose MJ Print Services?</h2>
+                <p class="text-gray-400 mt-2 max-w-2xl mx-auto">We don't just print - we deliver exceptional service and
+                    expertise</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="text-center p-6">
+                    <div class="w-16 h-16 bg-brand rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                            </path>
+                        </svg>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">Expert Craftsmanship</h3>
+                    <p class="text-gray-400 text-sm">Years of experience in delivering high-quality prints with
+                        attention to detail and precision.</p>
+                </div>
+
+                <div class="text-center p-6">
+                    <div class="w-16 h-16 bg-brand rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">Fast Turnaround</h3>
+                    <p class="text-gray-400 text-sm">Efficient production process with standard 2-5 business day
+                        processing for most orders.</p>
+                </div>
+
+                <div class="text-center p-6">
+                    <div class="w-16 h-16 bg-brand rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                            </path>
+                        </svg>
+                    </div>
+                    <h3 class="font-bold text-lg mb-2">Personalized Service</h3>
+                    <p class="text-gray-400 text-sm">Direct communication with our team to ensure your vision comes to
+                        life exactly as planned.</p>
+                </div>
+            </div>
+
+            <div class="text-center mt-12">
+                <p class="text-gray-300 text-lg">Our value is in the <strong>labor and service</strong> we provide,
+                    ensuring your complete satisfaction with every order.</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="bg-gray-900 border-t border-gray-800 mt-auto">
         <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
             <div class="md:flex md:items-center md:justify-between">
                 <div class="flex justify-center md:justify-start">
-                    <span class="text-2xl font-extrabold text-white tracking-tighter">MJ</span>
-                    <span class="text-xl font-bold text-gray-400 italic ml-1">PRINT</span>
+                    <img src="logo.png" alt="MJ Print Advertisement" class="h-10 w-auto" />
                 </div>
                 <div class="mt-8 md:mt-0 flex space-x-6 justify-center md:justify-end">
                     <a href="file-guide.html" class="text-gray-400 hover:text-white transition-colors">File Guide</a>

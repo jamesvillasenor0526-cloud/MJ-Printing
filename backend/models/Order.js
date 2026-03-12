@@ -32,10 +32,25 @@ const orderSchema = new mongoose.Schema({
         enum: ['delivery', 'pickup'],
         default: 'delivery'
     },
+    paymentMethod: {
+        type: String,
+        enum: ['gcash'],
+        default: 'gcash'
+    },
+    paymentType: {
+        type: String,
+        enum: ['full', 'downpayment'],
+        default: 'full'
+    },
+    downpaymentAmount: {
+        type: Number,
+        default: 0
+    },
     items: [{
         name: String,
         quantity: Number,
         price: Number,
+        image: String,
         filePath: String,
         fileUrl: String
     }],
@@ -55,6 +70,10 @@ const orderSchema = new mongoose.Schema({
         type: String,
         enum: ['Pending', 'Processing', 'In Production', 'Ready for Pickup', 'Out for Delivery', 'Completed', 'Cancelled'],
         default: 'Pending'
+    },
+    proof: {
+        type: String,
+        default: ''
     },
     date: {
         type: Date,

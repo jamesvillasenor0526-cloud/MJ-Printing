@@ -17,10 +17,11 @@
                 extend: {
                     colors: {
                         brand: {
-                            DEFAULT: '#319F43', // MJ Green
-                            hover: '#288A3A',
-                            light: '#EAF7EC',
-                            red: '#ED1C24'      // MJ Red
+                            DEFAULT: '#E11D2E', // MJ Red (logo)
+                            hover: '#C51626',
+                            light: '#FDE8EA',
+                            dark: '#0B0B0F',
+                            red: '#E11D2E'
                         }
                     },
                     fontFamily: {
@@ -42,15 +43,9 @@
 
     <nav class="bg-white shadow-sm sticky top-0 z-50" x-data="{ open: false }">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16 sm:h-20">
+            <div class="flex justify-between h-20 sm:h-24">
                 <a href="index.html" class="flex items-center group">
-                    <div class="flex flex-col justify-center leading-none">
-                        <div class="flex items-baseline">
-                            <span
-                                class="text-3xl font-extrabold text-brand tracking-tighter group-hover:scale-105 transition-transform">MJ</span>
-                            <span class="text-2xl font-bold text-black italic ml-1">PRINT</span>
-                        </div>
-                    </div>
+                    <img src="logo.png" alt="MJ Print Advertisement" class="h-14 sm:h-20 w-auto" />
                 </a>
 
                 <div class="hidden md:flex items-center space-x-8">
@@ -139,7 +134,7 @@
                 class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center flex-wrap gap-2">
                 <div>
                     <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Order Reference</span>
-                    <h2 class="text-xl font-bold text-gray-900" x-text="'#' + order.id"></h2>
+                    <h2 class="text-xl font-bold text-gray-900" x-text="'#' + order.referenceId"></h2>
                 </div>
                 <div class="px-3 py-1 rounded-full text-sm font-bold" :class="{
                         'bg-yellow-100 text-yellow-800': order.status === 'Pending',
@@ -225,15 +220,19 @@
                 <div class="mt-12 border-t border-gray-100 pt-8">
                     <h4 class="font-bold text-gray-900 mb-4">Order Items</h4>
                     <div class="space-y-4">
-                        <template x-for="item in order.items" :key="item.id">
+                        <template x-for="(item, index) in order.items" :key="item._id || index">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center">
-                                    <!-- Show uploaded image if available, otherwise show generic box -->
+                                    <!-- Show product image -> uploaded file -> generic box -->
                                     <template x-if="item.imagePreview">
                                         <img :src="item.imagePreview"
                                             class="h-16 w-16 object-cover rounded-lg border border-gray-200">
                                     </template>
-                                    <template x-if="!item.imagePreview">
+                                    <template x-if="!item.imagePreview && item.image">
+                                        <img :src="item.image.startsWith('/') ? window.location.origin + item.image : item.image"
+                                            class="h-16 w-16 object-cover rounded-lg border border-gray-200">
+                                    </template>
+                                    <template x-if="!item.imagePreview && !item.image">
                                         <div
                                             class="h-16 w-16 bg-gray-100 rounded-lg flex items-center justify-center text-gray-500 text-xs text-center p-1">
                                             <span x-text="item.name.substring(0, 10) + '...'"></span>
@@ -397,8 +396,7 @@
         <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
             <div class="md:flex md:items-center md:justify-between">
                 <div class="flex justify-center md:justify-start">
-                    <span class="text-2xl font-extrabold text-white tracking-tighter">MJ</span>
-                    <span class="text-xl font-bold text-gray-400 italic ml-1">PRINT</span>
+                    <img src="logo.png" alt="MJ Print Advertisement" class="h-10 w-auto" />
                 </div>
                 <div class="mt-8 md:mt-0 flex space-x-6 justify-center md:justify-end">
                     <a href="file-guide.html" class="text-gray-400 hover:text-white transition-colors">File Guide</a>
@@ -522,4 +520,4 @@
     <script src="js/chat-widget.js"></script>
 </body>
 
-</html>
+</html>""  

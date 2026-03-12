@@ -14,10 +14,11 @@
                 extend: {
                     colors: {
                         brand: {
-                            DEFAULT: '#319F43', // MJ Green
-                            hover: '#288A3A',
-                            light: '#EAF7EC',
-                            red: '#ED1C24'
+                            DEFAULT: '#E11D2E', // MJ Red (logo)
+                            hover: '#C51626',
+                            light: '#FDE8EA',
+                            dark: '#0B0B0F',
+                            red: '#E11D2E'
                         }
                     },
                     fontFamily: {
@@ -44,10 +45,9 @@
     <!-- Reuse standard navbar logic, but simpler for this page since we are logged in -->
     <nav class="bg-white shadow-sm sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16 sm:h-20">
+            <div class="flex justify-between h-20 sm:h-24">
                 <a href="index.html" class="flex items-center">
-                    <span class="text-3xl font-extrabold text-brand tracking-tighter">MJ</span>
-                    <span class="text-2xl font-bold text-black italic ml-1">PRINT</span>
+                    <img src="logo.png" alt="MJ Print Advertisement" class="h-14 sm:h-20 w-auto" />
                 </a>
                 <div class="flex items-center space-x-6">
                     <a href="index.html" class="text-gray-500 hover:text-brand font-medium hidden md:block">Home</a>
@@ -616,7 +616,7 @@
                                 <p class="font-bold mb-1">Products Ordered:</p>
                                 <ul class="list-disc list-inside">
                                     <template x-if="selectedOrder">
-                                        <template x-for="item in selectedOrder.items">
+                                        <template x-for="(item, index) in selectedOrder.items" :key="item._id || index">
                                             <li x-text="item.name"></li>
                                         </template>
                                     </template>
@@ -743,7 +743,6 @@
                     }
 
                     try {
-                        const ReviewsAPI = (await import('./js/api.js')).ReviewsAPI;
                         await ReviewsAPI.create(
                             this.reviewForm.rating,
                             this.reviewForm.text,

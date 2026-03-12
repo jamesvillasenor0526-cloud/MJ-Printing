@@ -4,6 +4,15 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { protect } = require('../middleware/auth');
 
+// Normalize phone number - keep only digits but preserve leading + if present
+const normalizePhone = (phone) => {
+    if (!phone) return '';
+    // Keep the + prefix if present, then remove all non-digits from the rest
+    const hasPlus = phone.startsWith('+');
+    const digits = phone.replace(/\D/g, '');
+    return hasPlus ? '+' + digits : digits;
+};
+
 // Generate JWT
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -24,12 +33,12 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        // Create user
+        // Create user with normalized phone
         const user = await User.create({
             name,
             email,
             password,
-            phone: phone || ''
+            phone: normalizePhone(phone)
         });
 
         if (user) {
@@ -62,10 +71,20 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ message: 'Please provide email or username' });
         }
 
-        // Find user by email OR username OR phone
-        const user = await User.findOne({
-            $or: [{ email: identifier }, { username: identifier }, { phone: identifier }]
-        }).select('+password');
+        // Normalize identifier if it looks like a phone number (only digits)
+        const normalizedIdentifier = normalizePhone(identifier);
+        const isPhoneNumber = normalizedIdentifier.length > 0 && /^\d+$/.test(identifier);
+
+        // Find user by email OR username OR phone (with phone normalization)
+        const query = {
+            $or: [
+                { email: identifier },
+                { username: identifier },
+                ...(isPhoneNumber ? [{ phone: normalizedIdentifier }] : [])
+            ]
+        };
+
+        const user = await User.findOne(query).select('+password');
 
         if (user && (await user.matchPassword(password))) {
             res.json({
