@@ -170,7 +170,9 @@
                             </svg>
                         </template>
                     </div>
-                    <p class="text-gray-600 mb-2 italic flex-grow" x-text="'&quot;' + review.text + '&quot;'"></p>
+                    <p class="text-gray-600 mb-2 italic flex-grow"
+                        x-text="'&quot;' + (review.text && review.text.length > 120 ? review.text.substring(0, 120) + ' ...' : review.text) + '&quot;'">
+                    </p>
 
                     <!-- Products Reviewed -->
                     <template x-if="review.products && review.products.length > 0">
@@ -262,11 +264,13 @@
 
                                         <div>
                                             <label class="block text-sm font-medium text-gray-700">Review <span
-                                                    class="text-gray-400 text-xs">(max 500 characters)</span></label>
+                                                    class="text-gray-400 text-xs">(max 50 words, 500
+                                                    characters)</span></label>
                                             <textarea x-model="newReview.text" required rows="3" maxlength="500"
                                                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-brand focus:border-brand sm:text-sm"></textarea>
                                             <p class="text-xs text-gray-400 mt-1"
-                                                x-text="newReview.text.length + '/500 characters'"></p>
+                                                x-text="newReview.text.trim().split(/\s+/).filter(w => w.length > 0).length + '/50 words | ' + newReview.text.length + '/500 characters'">
+                                            </p>
                                         </div>
 
                                         <div>
@@ -530,6 +534,13 @@
                         return;
                     }
 
+                    // Word count validation (max 50 words)
+                    const wordCount = this.newReview.text.trim().split(/\s+/).filter(w => w.length > 0).length;
+                    if (wordCount > 50) {
+                        alert('Review must be 50 words or less');
+                        return;
+                    }
+
                     try {
                         await ReviewsAPI.create(this.newReview.rating, this.newReview.text, null, this.newReview.imageFile);
 
@@ -573,4 +584,4 @@
     </script>
 </body>
 
-</html>""  
+</html>""
