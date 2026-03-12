@@ -307,31 +307,31 @@
                         </template>
                     </div>
                     <p class="text-gray-600 text-sm mb-4"
-                        x-text="'"' + (review.text.length > 120 ? review.text.substring(0, 120) + ' ...' : review.text)
-                        + '"'"></p>
+                        x-text="'&quot;' + (review.text && review.text.length > 120 ? review.text.substring(0, 120) + ' ...' : (review.text || '')) + '&quot;'">
+                    </p>
                     <div class=" flex items-center">
-                    <div class="h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold"
-                        :class="review.colorClass || 'bg-blue-100 text-blue-700'"
-                        x-text="review.name ? review.name.split(' ').map(n => n[0]).join('').substring(0,2) : 'U'">
-                    </div>
-                    <div class="ml-2">
-                        <p class="text-sm font-bold text-gray-900" x-text="review.name"></p>
-                        <p class="text-xs text-gray-500" x-text="review.role || 'Customer'"></p>
+                        <div class="h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold"
+                            :class="review.colorClass || 'bg-blue-100 text-blue-700'"
+                            x-text="review.name ? review.name.split(' ').map(n => n[0]).join('').substring(0,2) : 'U'">
+                        </div>
+                        <div class="ml-2">
+                            <p class="text-sm font-bold text-gray-900" x-text="review.name"></p>
+                            <p class="text-xs text-gray-500" x-text="review.role || 'Customer'"></p>
+                        </div>
                     </div>
                 </div>
+            </template>
         </div>
-        </template>
-    </div>
 
-    <div class="text-center">
-        <a href="reviews.html" class="inline-flex items-center text-brand font-medium hover:text-brand-hover">
-            View all reviews
-            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3">
-                </path>
-            </svg>
-        </a>
-    </div>
+        <div class="text-center">
+            <a href="reviews.html" class="inline-flex items-center text-brand font-medium hover:text-brand-hover">
+                View all reviews
+                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3">
+                    </path>
+                </svg>
+            </a>
+        </div>
     </div>
 
     <!-- Services Section -->
