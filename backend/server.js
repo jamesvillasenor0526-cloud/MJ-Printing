@@ -20,8 +20,15 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static HTML files from parent directory (frontend)
 app.use(express.static(path.join(__dirname, '..')));
 
+// Ensure uploads directory exists for Render deployments
+const fs = require('fs');
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
 // Serve uploaded files statically
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(uploadsDir));
 
 // Routes
 const authRoutes = require('./routes/auth');
