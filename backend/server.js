@@ -54,9 +54,39 @@ app.get('/api', (req, res) => {
             products: '/api/products',
             orders: '/api/orders',
             reviews: '/api/reviews',
-            chats: '/api/chats'
+            chats: '/api/chats',
+            seedAdmin: '/api/seed-admin'
         }
     });
+});
+
+// Temporary Admin Auto-Seed Route
+const User = require('./models/User');
+app.get('/api/seed-admin', async (req, res) => {
+    try {
+        const email = 'admin@mjprint.com';
+        const password = 'admin123';
+        let admin = await User.findOne({ email });
+        
+        if (!admin) {
+            admin = await User.create({
+                name: 'System Admin',
+                email: email,
+                username: 'admin',
+                password: password,
+                phone: '0000000000',
+                role: 'admin',
+                notifications: {
+                    orderUpdates: true,
+                    paymentUpdates: true
+                }
+            });
+            return res.send('<h1 style="color:green; font-family:sans-serif; text-align:center; margin-top:50px;">✅ Admin Account Created Successfully!</h1><p style="text-align:center;"><a href="/admin-login.html" style="font-size:20px; text-decoration:none;">Click here to Login</a></p>');
+        }
+        return res.send('<h1 style="color:blue; font-family:sans-serif; text-align:center; margin-top:50px;">⭐ Admin Already Exists!</h1><p style="text-align:center;"><a href="/admin-login.html" style="font-size:20px; text-decoration:none;">Click here to Login</a></p>');
+    } catch (error) {
+        return res.status(500).send('<h1 style="color:red; font-family:sans-serif; text-align:center; margin-top:50px;">❌ Error: ' + error.message + '</h1>');
+    }
 });
 
 // Root route - serve frontend
