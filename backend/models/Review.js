@@ -36,6 +36,14 @@ const reviewSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
+    video: {
+        type: String,
+        default: ''
+    },
+    deletedAt: {
+        type: Date,
+        default: null
+    },
     date: {
         type: Date,
         default: Date.now

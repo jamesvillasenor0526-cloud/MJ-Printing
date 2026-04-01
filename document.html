@@ -50,18 +50,56 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-20 sm:h-24">
                 <a href="index.html" class="flex items-center group">
-                    <img src="logo.png" alt="MJ Print Advertisement" class="h-14 sm:h-20 w-auto" />
+                    <img src="images/logo.png" alt="MJ Print Advertisement" class="h-14 sm:h-20 w-auto" />
                 </a>
 
                 <div class="hidden md:flex items-center space-x-8">
                     <a href="index.html" class="text-gray-500 hover:text-brand font-medium">Home</a>
-                    <a href="portfolio.html" class="text-gray-500 hover:text-brand font-medium">Portfolio</a>
-                    <a href="reviews.html" class="text-gray-500 hover:text-brand font-medium">Reviews</a>
+                    <a href="about.html" class="text-gray-500 hover:text-brand font-medium">About</a>
+                    <a href="index.html#services" class="text-gray-500 hover:text-brand font-medium">Services</a>
 
-                    <!-- Dynamic Auth Link -->
+                    <!-- Dynamic Auth Link with Dropdown -->
                     <template x-if="$store.auth.isLoggedIn">
-                        <a href="profile.html" class="text-gray-500 hover:text-brand font-medium"
-                            x-text="'My Account (' + $store.auth.user.name.split(' ')[0] + ')'">My Account</a>
+                        <div class="relative" x-data="{ dropdownOpen: false }">
+                            <button @click="dropdownOpen = !dropdownOpen" @click.outside="dropdownOpen = false"
+                                class="flex items-center text-gray-500 hover:text-brand font-medium focus:outline-none">
+                                <div class="flex items-center space-x-2">
+                                    <template x-if="$store.auth.user.profilePicture">
+                                        <img :src="$store.auth.user.profilePicture"
+                                            class="w-8 h-8 rounded-full object-cover border border-gray-200"
+                                            onerror="this.onerror=null; this.src='images/default-avatar.png';">
+                                    </template>
+                                    <template x-if="!$store.auth.user.profilePicture">
+                                        <div class="w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center font-bold text-sm"
+                                            x-text="$store.auth.user.name.charAt(0)"></div>
+                                    </template>
+                                    <span class="ml-2 font-medium" x-text="$store.auth.user.name.split(' ')[0]"></span>
+                                </div>
+                                <svg class="w-4 h-4 ml-1 transition-transform" :class="dropdownOpen ? 'rotate-180' : ''"
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+
+                            <!-- Dropdown Menu -->
+                            <div x-show="dropdownOpen" x-transition:enter="transition ease-out duration-200"
+                                x-transition:enter-start="opacity-0 translate-y-1"
+                                x-transition:enter-end="opacity-100 translate-y-0"
+                                x-transition:leave="transition ease-in duration-150"
+                                x-transition:leave-start="opacity-100 translate-y-0"
+                                x-transition:leave-end="opacity-0 translate-y-1"
+                                class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg ring-1 ring-black/5 py-2 z-50"
+                                style="display: none;">
+                                <a href="profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">My
+                                    Account</a>
+                                <a href="orders.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">My
+                                    Purchase</a>
+                                <div class="border-t border-gray-100 my-1"></div>
+                                <button @click="$store.auth.logout()"
+                                    class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50">Logout</button>
+                            </div>
+                        </div>
                     </template>
 
                     <a href="cart.html" class="relative group">
@@ -96,26 +134,42 @@
         <div x-show="open" class="md:hidden bg-white border-t border-gray-100 shadow-xl" x-transition>
             <div class="px-4 pt-2 pb-4 space-y-2">
                 <a href="index.html"
-                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 rounded-lg">Home</a>
-                <a href="portfolio.html"
-                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Portfolio</a>
-                <a href="reviews.html"
-                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Reviews</a>
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Home</a>
+                <a href="about.html"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">About</a>
+                <a href="index.html#services"
+                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Services</a>
                 <a href="track.html"
                     class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Track
                     Order</a>
-                <a href="about.html"
-                    class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">About
-                    Us</a>
                 <a href="cart.html"
                     class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">Cart
                     (<span x-text="$store.cart.count">0</span>)</a>
 
-                <!-- Mobile Auth Links -->
+                <!-- Mobile Auth Links with Dropdown -->
                 <template x-if="$store.auth.isLoggedIn">
-                    <a href="profile.html"
-                        class="block px-4 py-3 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand border-t border-gray-100"
-                        x-text="'My Account (' + $store.auth.user.name.split(' ')[0] + ')'">My Account</a>
+                    <div class="border-t border-gray-100 mt-2 pt-2">
+                        <div class="px-4 py-2 flex items-center space-x-3">
+                            <template x-if="$store.auth.user.profilePicture">
+                                <img :src="$store.auth.user.profilePicture"
+                                    class="w-8 h-8 rounded-full object-cover border border-gray-200"
+                                    onerror="this.onerror=null; this.src='images/default-avatar.png';">
+                            </template>
+                            <template x-if="!$store.auth.user.profilePicture">
+                                <div class="w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center font-bold text-sm"
+                                    x-text="$store.auth.user.name.charAt(0)"></div>
+                            </template>
+                            <span class="text-sm font-bold text-gray-700" x-text="$store.auth.user.name"></span>
+                        </div>
+                        <a href="profile.html"
+                            class="block px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">My
+                            Account</a>
+                        <a href="orders.html"
+                            class="block px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-brand">My
+                            Purchase</a>
+                        <button @click="$store.auth.logout()"
+                            class="w-full text-left block px-4 py-2 text-base font-medium text-red-600 hover:bg-gray-50">Logout</button>
+                    </div>
                 </template>
                 <template x-if="!$store.auth.isLoggedIn">
                     <a href="login.html"
@@ -143,6 +197,7 @@
             notes: '',
             fileName: '',
             imagePreview: null,
+            exampleImage: null,
             loading: true,
 
             async init() {
@@ -190,6 +245,12 @@
                 return unitPrice * this.copies;
             },
 
+            get productImage() {
+                if (!this.selectedProduct || !this.selectedProduct.image) return null;
+                const img = this.selectedProduct.image;
+                return img.startsWith('/') ? 'http://localhost:5000' + img : img;
+            },
+
             handleFileUpload(event) {
                 const file = event.target.files[0];
                 if (file) {
@@ -210,6 +271,12 @@
 
             addToCart() {
                 if (!this.selectedProduct) return;
+                
+                // Validate quantity
+                if (this.copies > 999) {
+                    alert('Maximum quantity is 999 per item');
+                    return;
+                }
                 
                 Alpine.store('cart').add({
                     name: this.productType,
@@ -250,8 +317,31 @@
                     </svg>
                 </div>
 
+                <!-- Product Pictures Box - Shows selected product image -->
+                <div x-show="!loading" class="bg-gray-50 rounded-xl p-6 mb-6 border border-gray-200">
+                    <p class="text-sm font-semibold text-gray-700 mb-4">Product Pictures</p>
+                    <div class="flex justify-center">
+                        <template x-if="productImage">
+                            <div @click="$dispatch('open-modal', productImage)"
+                                class="w-32 h-32 rounded-lg overflow-hidden border-2 border-gray-200 hover:border-brand cursor-pointer transition-all hover:scale-105">
+                                <img :src="productImage" class="w-full h-full object-cover"
+                                    onerror="this.style.display='none'" :alt="productType">
+                            </div>
+                        </template>
+                        <template x-if="!productImage">
+                            <div
+                                class="w-32 h-32 rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-100 flex items-center justify-center text-gray-400">
+                                No image
+                            </div>
+                        </template>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-2 text-center"
+                        x-text="'Showing: ' + productType + ' - Click to view full image'"></p>
+                </div>
+
                 <div x-show="!loading"
                     class="border-2 border-dashed border-gray-300 rounded-2xl p-8 sm:p-12 text-center hover:border-brand hover:bg-brand-light transition-colors cursor-pointer group bg-white overflow-hidden relative">
+
                     <div x-show="!fileName">
                         <div class="flex justify-center">
                             <svg class="w-16 h-16 text-gray-400 group-hover:text-brand transition-colors" fill="none"
@@ -351,9 +441,10 @@
                             <div class="flex items-center border border-gray-300 rounded-lg w-max">
                                 <button type="button" @click="copies > 1 ? copies-- : null"
                                     class="px-4 py-3 text-gray-600 hover:bg-gray-100 border-r border-gray-300">-</button>
-                                <input type="number" x-model="copies"
+                                <input type="number" x-model="copies" min="1" max="999"
+                                    @input="if(copies > 999) copies = 999; if(copies < 1) copies = 1"
                                     class="w-16 py-3 text-center border-none focus:ring-0 text-lg font-semibold">
-                                <button type="button" @click="copies++"
+                                <button type="button" @click="copies < 999 ? copies++ : null"
                                     class="px-4 py-3 text-gray-600 hover:bg-gray-100 border-l border-gray-300">+</button>
                             </div>
                         </div>
@@ -380,7 +471,7 @@
         <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
             <div class="md:flex md:items-center md:justify-between">
                 <div class="flex justify-center md:justify-start">
-                    <img src="logo.png" alt="MJ Print Advertisement" class="h-10 w-auto" />
+                    <img src="images/logo.png" alt="MJ Print Advertisement" class="h-10 w-auto" />
                 </div>
                 <div class="mt-8 md:mt-0 flex space-x-6 justify-center md:justify-end">
                     <a href="file-guide.html" class="text-gray-400 hover:text-white transition-colors">File Guide</a>
@@ -489,6 +580,28 @@
     </div>
 
     <script src="js/chat-widget.js"></script>
+
+    <!-- Full Image Modal -->
+    <div x-data="{ open: false, image: '' }" @open-modal.window="image = $event.detail; open = true" x-show="open"
+        x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+        class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity" @click="open = false"></div>
+            <div class="relative inline-block max-w-4xl w-full bg-white rounded-lg shadow-xl p-2">
+                <button @click="open = false"
+                    class="absolute top-1 right-1 text-gray-500 hover:text-gray-700 z-10 bg-white rounded-full p-1">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+                <img :src="image" class="w-full h-auto max-h-[80vh] object-contain rounded-lg mx-auto"
+                    style="max-width: 100%; overflow-wrap: break-word;" @error="open = false">
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

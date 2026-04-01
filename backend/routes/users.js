@@ -1,10 +1,44 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const User = require('../models/User');
 const Order = require('../models/Order');
 const Chat = require('../models/Chat');
 const { protect } = require('../middleware/auth');
+
+// Configure multer for profile picture uploads
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const uploadDir = path.join(__dirname, '../uploads/profiles');
+        // Create directory if it doesn't exist
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, 'profile-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    fileFilter: function (req, file, cb) {
+        const filetypes = /jpeg|jpg|png|webp/;
+        const mimetype = filetypes.test(file.mimetype);
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+        
+        if (mimetype && extname) {
+            return cb(null, true);
+        }
+        cb(new Error('Only image files are allowed!'));
+    }
+});
 
 // @route   GET /api/users/profile
 // @desc    Get user profile
@@ -15,6 +49,33 @@ router.get('/profile', protect, async (req, res) => {
         res.json(user);
     } catch (error) {
         res.status(500).json({ message: error.message });
+    }
+});
+
+// @route   PUT /api/users/profile/picture
+// @desc    Update user profile picture
+// @access  Private
+router.put('/profile/picture', protect, upload.single('profilePicture'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No image file provided' });
+        }
+
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Generate image URL
+        const imageUrl = `/uploads/profiles/${req.file.filename}`;
+        
+        user.profilePicture = imageUrl;
+        await user.save();
+
+        res.json({ profilePicture: imageUrl, message: 'Profile picture updated successfully' });
+    } catch (error) {
+        console.error('Profile picture upload error:', error);
+        res.status(500).json({ message: error.message || 'Server error during upload' });
     }
 });
 
@@ -69,6 +130,7 @@ router.put('/profile', protect, async (req, res) => {
                 name: updatedUser.name,
                 email: updatedUser.email,
                 phone: updatedUser.phone,
+                profilePicture: updatedUser.profilePicture,
                 role: updatedUser.role,
                 addresses: updatedUser.addresses,
                 notifications: updatedUser.notifications

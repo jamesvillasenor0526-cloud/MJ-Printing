@@ -78,6 +78,14 @@ const orderSchema = new mongoose.Schema({
     date: {
         type: Date,
         default: Date.now
+    },
+    deletedAt: {
+        type: Date,
+        default: null
+    },
+    priority: {
+        type: Number,
+        default: 0
     }
 }, {
     timestamps: true

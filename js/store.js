@@ -1,6 +1,6 @@
 document.addEventListener('alpine:init', () => {
     // Maximum quantity allowed per item
-    const MAX_QUANTITY_PER_ITEM = 100;
+    const MAX_QUANTITY_PER_ITEM = 999;
 
     Alpine.store('cart', {
         items: [],
@@ -206,6 +206,7 @@ document.addEventListener('alpine:init', () => {
     Alpine.store('products', {
         items: [],
         categories: [],
+        categorySettings: {}, // Sample images for each category
         loading: false,
 
         async fetchCategories() {
@@ -214,6 +215,27 @@ document.addEventListener('alpine:init', () => {
             } catch (e) {
                 console.error('Failed to fetch categories', e);
             }
+        },
+
+        async fetchCategorySettings() {
+            // Fetch sample images for each category (public endpoint)
+            try {
+                this.categorySettings = await CategorySettingsAPI.getAllSettings();
+            } catch (e) {
+                console.error('Failed to fetch category settings', e);
+                // Use fallback default images
+                this.categorySettings = {
+                    'Merchandise': ['images/t-shirtWhite.jpg', 'images/t-shirtBlue.jpg', 'images/t-shirtRed.jpg', 'images/mugs.jpg', 'images/mugsWBox.jpg'],
+                    'Large Format': ['images/standee.jpg', 'images/uniforms.jpg', 'images/schoolVest.jpg', 'images/acrylic-medal.jpg'],
+                    'Document Printing': ['images/logo.png', 'images/MJPrintinCover.jpg', 'images/refMagnet.jpg', 'images/standee.jpg'],
+                    'Photo Lab': ['images/refMagnet.jpg', 'images/standee.jpg', 'images/acrylic-medal.jpg', 'images/MJPrintinCover.jpg'],
+                    'Events': ['images/mugs.jpg', 'images/mugsWBox.jpg', 'images/standee.jpg', 'images/uniforms.jpg']
+                };
+            }
+        },
+
+        getSampleImages(category) {
+            return this.categorySettings[category] || [];
         },
 
         async fetchByCategory(category) {

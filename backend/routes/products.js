@@ -35,7 +35,7 @@ const upload = multer({
 router.get('/', async (req, res) => {
     try {
         const { category } = req.query;
-        let query = { isActive: true };
+        let query = { isActive: true, deletedAt: null };
 
         // Admin can see inactive products if they want (optional, but keep simple for now)
         // For admin dashboard we might want a different endpoint or query param
@@ -154,15 +154,65 @@ router.put('/admin/:id', protect, admin, upload.single('image'), async (req, res
 });
 
 // @route   DELETE /api/products/admin/:id
-// @desc    Delete a product
+// @desc    Soft delete product (move to trash)
 // @access  Private/Admin
 router.delete('/admin/:id', protect, admin, async (req, res) => {
     try {
         const product = await Product.findById(req.params.id);
         if (!product) return res.status(404).json({ message: 'Product not found' });
 
+        product.deletedAt = new Date();
+        await product.save();
+        res.json({ message: 'Product moved to trash' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// @route   GET /api/products/admin/trash
+// @desc    Get deleted products (trash)
+// @access  Private/Admin
+router.get('/admin/trash', protect, admin, async (req, res) => {
+    try {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const products = await Product.find({
+            deletedAt: { $ne: null },
+            deletedAt: { $gte: thirtyDaysAgo }
+        }).sort({ deletedAt: -1 });
+        res.json(products);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// @route   PUT /api/products/admin/:id/restore
+// @desc    Restore product from trash
+// @access  Private/Admin
+router.put('/admin/:id/restore', protect, admin, async (req, res) => {
+    try {
+        const product = await Product.findById(req.params.id);
+        if (!product) return res.status(404).json({ message: 'Product not found' });
+
+        product.deletedAt = null;
+        await product.save();
+        res.json({ message: 'Product restored' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// @route   DELETE /api/products/admin/:id/permanent
+// @desc    Permanently delete product
+// @access  Private/Admin
+router.delete('/admin/:id/permanent', protect, admin, async (req, res) => {
+    try {
+        const product = await Product.findById(req.params.id);
+        if (!product) return res.status(404).json({ message: 'Product not found' });
+
         await product.deleteOne();
-        res.json({ message: 'Product removed' });
+        res.json({ message: 'Product permanently deleted' });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

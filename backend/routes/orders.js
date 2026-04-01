@@ -5,7 +5,6 @@ const path = require('path');
 const Order = require('../models/Order');
 const Review = require('../models/Review');
 const { protect, admin } = require('../middleware/auth');
-
 const Notification = require('../models/Notification');
 
 // Configure multer for file uploads
@@ -53,6 +52,17 @@ router.post('/', protect, upload.array('files', 10), async (req, res) => {
             }
         } else if (Array.isArray(items)) {
             parsedItems = items;
+        }
+
+        // Validate quantity limits - max 999 per item
+        const MAX_QUANTITY = 999;
+        for (const item of parsedItems) {
+            const qty = parseInt(item.quantity) || 1;
+            if (qty > MAX_QUANTITY) {
+                return res.status(400).json({
+                    message: `Quantity for "${item.name || 'item'}" exceeds maximum limit of ${MAX_QUANTITY}`
+                });
+            }
         }
 
         // Add file paths to items
@@ -122,7 +132,7 @@ router.post('/', protect, upload.array('files', 10), async (req, res) => {
 // @access  Private
 router.get('/', protect, async (req, res) => {
     try {
-        const orders = await Order.find({ user: req.user._id }).sort({ date: -1 });
+        const orders = await Order.find({ user: req.user._id, deletedAt: null }).sort({ date: -1 });
 
         // Check if each order has been reviewed
         const ordersWithReviews = await Promise.all(orders.map(async (order) => {
@@ -143,11 +153,11 @@ router.get('/', protect, async (req, res) => {
 // ====== ADMIN ROUTES (must be before /:id to avoid route conflict) ======
 
 // @route   GET /api/orders/admin/all
-// @desc    Get all orders (admin)
+// @desc    Get all orders (admin, excluding deleted)
 // @access  Private/Admin
 router.get('/admin/all', protect, admin, async (req, res) => {
     try {
-        const orders = await Order.find({}).sort({ date: -1 }).populate('user', 'name email');
+        const orders = await Order.find({ deletedAt: null }).sort({ date: -1 }).populate('user', 'name email');
         res.json(orders);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -172,6 +182,26 @@ router.put('/admin/:id/status', protect, admin, async (req, res) => {
         }
 
         order.status = req.body.status;
+        await order.save();
+
+        res.json(order);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// @route   PUT /api/orders/admin/:id/priority
+// @desc    Update order priority (admin)
+// @access  Private/Admin
+router.put('/admin/:id/priority', protect, admin, async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id);
+
+        if (!order) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
+        order.priority = req.body.priority || 0;
         await order.save();
 
         res.json(order);
@@ -221,7 +251,7 @@ router.put('/admin/:id/proof', protect, admin, (req, res, next) => {
 });
 
 // @route   DELETE /api/orders/admin/:id
-// @desc    Delete order (admin)
+// @desc    Soft delete order (move to trash)
 // @access  Private/Admin
 router.delete('/admin/:id', protect, admin, async (req, res) => {
     try {
@@ -231,8 +261,64 @@ router.delete('/admin/:id', protect, admin, async (req, res) => {
             return res.status(404).json({ message: 'Order not found' });
         }
 
+        order.deletedAt = new Date();
+        await order.save();
+        res.json({ message: 'Order moved to trash' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// @route   GET /api/orders/admin/trash
+// @desc    Get deleted orders (trash)
+// @access  Private/Admin
+router.get('/admin/trash', protect, admin, async (req, res) => {
+    try {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const orders = await Order.find({
+            deletedAt: { $ne: null },
+            deletedAt: { $gte: thirtyDaysAgo }
+        }).sort({ deletedAt: -1 });
+        res.json(orders);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// @route   PUT /api/orders/admin/:id/restore
+// @desc    Restore order from trash
+// @access  Private/Admin
+router.put('/admin/:id/restore', protect, admin, async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id);
+
+        if (!order) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
+        order.deletedAt = null;
+        await order.save();
+        res.json({ message: 'Order restored' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// @route   DELETE /api/orders/admin/:id/permanent
+// @desc    Permanently delete order
+// @access  Private/Admin
+router.delete('/admin/:id/permanent', protect, admin, async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id);
+
+        if (!order) {
+            return res.status(404).json({ message: 'Order not found' });
+        }
+
         await order.deleteOne();
-        res.json({ message: 'Order deleted' });
+        res.json({ message: 'Order permanently deleted' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -246,7 +332,7 @@ router.delete('/admin/:id', protect, admin, async (req, res) => {
 router.get('/track/:referenceId', async (req, res) => {
     try {
         const order = await Order.findOne({ referenceId: req.params.referenceId })
-            .select('referenceId status items date deliveryMethod paymentMethod paymentType total subtotal shippingFee');
+            .select('referenceId status items date deliveryMethod paymentMethod paymentType total subtotal shippingFee proof');
 
         if (!order) {
             return res.status(404).json({ message: 'Order not found' });

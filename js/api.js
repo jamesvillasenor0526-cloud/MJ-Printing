@@ -4,6 +4,10 @@ const API_URL = (window.location.protocol === 'file:')
     ? 'http://localhost:5000/api'
     : window.location.origin + '/api';
 
+// Log the API URL being used
+console.log('[API] API_URL:', API_URL);
+console.log('[API] Current location:', window.location.href);
+
 // Store JWT token in localStorage with context awareness
 const TokenManager = {
     isAdminPage: () => window.location.pathname.includes('admin'),
@@ -126,6 +130,22 @@ const ProductsAPI = {
             method: 'PUT',
             body: JSON.stringify({ imageUrl })
         });
+    },
+
+    getTrash: async () => {
+        return await apiRequest('/products/admin/trash', { method: 'GET' });
+    },
+
+    restore: async (id) => {
+        return await apiRequest(`/products/admin/${id}/restore`, {
+            method: 'PUT'
+        });
+    },
+
+    permanentDelete: async (id) => {
+        return await apiRequest(`/products/admin/${id}/permanent`, {
+            method: 'DELETE'
+        });
     }
 };
 
@@ -188,6 +208,15 @@ const UsersAPI = {
         return await apiRequest('/users/password', {
             method: 'PUT',
             body: JSON.stringify({ currentPassword, newPassword })
+        });
+    },
+
+    uploadProfilePicture: async (file) => {
+        const formData = new FormData();
+        formData.append('profilePicture', file);
+        return await apiRequest('/users/profile/picture', {
+            method: 'PUT',
+            body: formData
         });
     },
 
@@ -296,6 +325,13 @@ const OrdersAPI = {
         });
     },
 
+    updatePriority: async (id, priority) => {
+        return await apiRequest(`/orders/admin/${id}/priority`, {
+            method: 'PUT',
+            body: JSON.stringify({ priority })
+        });
+    },
+
     delete: async (id) => {
         return await apiRequest(`/orders/admin/${id}`, {
             method: 'DELETE'
@@ -311,23 +347,52 @@ const OrdersAPI = {
             method: 'PUT',
             body: formData
         });
+    },
+
+    getTrash: async () => {
+        return await apiRequest('/orders/admin/trash', { method: 'GET' });
+    },
+
+    restore: async (id) => {
+        return await apiRequest(`/orders/admin/${id}/restore`, {
+            method: 'PUT'
+        });
+    },
+
+    permanentDelete: async (id) => {
+        return await apiRequest(`/orders/admin/${id}/permanent`, {
+            method: 'DELETE'
+        });
     }
 };
 
 // Reviews API
 const ReviewsAPI = {
     getAll: async () => {
-        return await fetch(`${API_URL}/reviews`)
-            .then(res => res.json());
+        console.log('[API] ReviewsAPI.getAll() called');
+        try {
+            const response = await fetch(`${API_URL}/reviews`);
+            console.log('[API] ReviewsAPI response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            console.log('[API] ReviewsAPI.getAll() returned', data.length, 'reviews');
+            return data;
+        } catch (error) {
+            console.error('[API] ReviewsAPI.getAll() error:', error);
+            throw error;
+        }
     },
 
-    create: async (rating, text, orderId, imageFile = null) => {
-        if (imageFile) {
+    create: async (rating, text, orderId, imageFile = null, videoFile = null) => {
+        if (imageFile || videoFile) {
             const formData = new FormData();
             formData.append('rating', rating);
             formData.append('text', text);
             if (orderId) formData.append('orderId', orderId);
-            formData.append('image', imageFile);
+            if (imageFile) formData.append('image', imageFile);
+            if (videoFile) formData.append('video', videoFile);
             return await apiRequest('/reviews', {
                 method: 'POST',
                 body: formData
@@ -348,6 +413,22 @@ const ReviewsAPI = {
 
     delete: async (id) => {
         return await apiRequest(`/reviews/${id}`, {
+            method: 'DELETE'
+        });
+    },
+
+    getTrash: async () => {
+        return await apiRequest('/reviews/trash', { method: 'GET' });
+    },
+
+    restore: async (id) => {
+        return await apiRequest(`/reviews/${id}/restore`, {
+            method: 'PUT'
+        });
+    },
+
+    permanentDelete: async (id) => {
+        return await apiRequest(`/reviews/${id}/permanent`, {
             method: 'DELETE'
         });
     }
@@ -411,6 +492,40 @@ const NotificationsAPI = {
 
     delete: async (id) => {
         return await apiRequest(`/notifications/${id}`, { method: 'DELETE' });
+    }
+};
+
+// Category Settings API (for homepage category hover gallery)
+const CategorySettingsAPI = {
+    // Get all category sample images (public - for homepage)
+    getAllSettings: async () => {
+        return await apiRequest('/categories/settings', { method: 'GET' });
+    },
+
+    // Get settings for a specific category
+    getSettings: async (category) => {
+        return await apiRequest(`/categories/settings/${encodeURIComponent(category)}`, { method: 'GET' });
+    },
+
+    // Update category sample images (admin only)
+    updateSettings: async (category, data) => {
+        return await apiRequest(`/categories/settings/${encodeURIComponent(category)}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+    },
+
+    // Create new category settings (admin only)
+    createSettings: async (data) => {
+        return await apiRequest('/categories/settings', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+
+    // Get available categories
+    getCategories: async () => {
+        return await apiRequest('/categories', { method: 'GET' });
     }
 };
 
