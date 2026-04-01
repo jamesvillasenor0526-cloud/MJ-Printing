@@ -274,7 +274,7 @@
                 const product = products.find(p => p.name === this.productType);
                 if (!product || !product.image) return null;
                 const img = product.image;
-                return img.startsWith('/') ? 'http://localhost:5000' + img : img;
+                return img.startsWith('/') ? (typeof API_URL !== 'undefined' ? API_URL.replace('/api', '') : '') + img : img;
             },
             addToCart() {
                 // Validate quantity

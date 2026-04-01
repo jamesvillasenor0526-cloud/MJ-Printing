@@ -233,7 +233,7 @@
             get productImage() {
                 if (!this.selectedProduct || !this.selectedProduct.image) return null;
                 const img = this.selectedProduct.image;
-                return img.startsWith('/') ? 'http://localhost:5000' + img : img;
+                return img.startsWith('/') ? (typeof API_URL !== 'undefined' ? API_URL.replace('/api', '') : '') + img : img;
             },
 
             get computedPrice() {

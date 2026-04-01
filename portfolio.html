@@ -212,7 +212,7 @@
                     class="group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 cursor-pointer transform hover:-translate-y-1">
                     <!-- Product Thumbnail -->
                     <div class="aspect-square w-full bg-gray-100 relative overflow-hidden">
-                        <img :src="(product.image ? (product.image.startsWith('/') ? 'http://localhost:5000' + product.image : product.image) : getDefaultImage(product.category))"
+                        <img :src="(product.image ? (product.image.startsWith('/') ? (typeof API_URL !== 'undefined' ? API_URL.replace('/api', '') : '') + product.image : product.image) : getDefaultImage(product.category))"
                             :alt="product.name"
                             class="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500"
                             loading="lazy">
@@ -412,7 +412,7 @@
                     if (!product) return [];
                     // If the product has portfolioImages from the DB, use those
                     if (product.portfolioImages && product.portfolioImages.length > 0) {
-                        return product.portfolioImages.map(img => img.startsWith('/') ? 'http://localhost:5000' + img : img);
+                        return product.portfolioImages.map(img => img.startsWith('/') ? (typeof API_URL !== 'undefined' ? API_URL.replace('/api', '') : '') + img : img);
                     }
                     // Otherwise generate showcase placeholders
                     const name = encodeURIComponent(product.name);

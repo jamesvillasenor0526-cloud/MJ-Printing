@@ -1299,7 +1299,7 @@
                                                 <div
                                                     class="h-10 w-10 rounded bg-gray-100 flex-shrink-0 mr-3 border border-gray-200 overflow-hidden">
                                                     <template x-if="product.image">
-                                                        <img :src="product.image.startsWith('/') ? 'http://localhost:5000' + product.image : product.image"
+                                                        <img :src="product.image.startsWith('/') ? (typeof API_URL !== 'undefined' ? API_URL.replace('/api', '') : '') + product.image : product.image"
                                                             class="w-full h-full object-cover">
                                                     </template>
                                                     <template x-if="!product.image">
@@ -1534,7 +1534,7 @@
                                 <template x-for="(img, index) in (portfolioProduct?.portfolioImages || [])"
                                     :key="index">
                                     <div class="relative rounded-lg overflow-hidden bg-gray-100 aspect-square">
-                                        <img :src="img.startsWith('/') ? 'http://localhost:5000' + img : img"
+                                        <img :src="img.startsWith('/') ? (typeof API_URL !== 'undefined' ? API_URL.replace('/api', '') : '') + img : img"
                                             class="w-full h-full object-cover">
                                         <button @click.stop="removePortfolioImage(img)" type="button"
                                             class="absolute top-1 right-1 z-10 bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 cursor-pointer">
