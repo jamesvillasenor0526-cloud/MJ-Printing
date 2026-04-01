@@ -1,0 +1,10 @@
+{
+  "name": "mj-print-services",
+  "version": "1.0.0",
+  "description": "MJ Print Services - Full Stack Application",
+  "scripts": {
+    "start": "cd backend && node server.js",
+    "install": "cd backend && npm install",
+    "dev": "cd backend && npx nodemon server.js"
+  }
+}

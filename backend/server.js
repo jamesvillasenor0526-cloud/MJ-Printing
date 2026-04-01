@@ -31,6 +31,7 @@ const orderRoutes = require('./routes/orders');
 const chatRoutes = require('./routes/chats');
 const reviewRoutes = require('./routes/reviews');
 const notificationRoutes = require('./routes/notifications');
+const categoryRoutes = require('./routes/categories');
 
 // Use Routes
 app.use('/api/auth', authRoutes);
@@ -40,9 +41,10 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/categories', categoryRoutes);
 
-// Root route
-app.get('/', (req, res) => {
+// API info route
+app.get('/api', (req, res) => {
     res.json({
         message: 'MJ Print Services API',
         version: '1.0.0',
@@ -57,22 +59,27 @@ app.get('/', (req, res) => {
     });
 });
 
+// Root route - serve frontend
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'index.html'));
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error('Error:', err);
-    
+
     // Don't send response if headers already sent
     if (res.headersSent) {
         return next(err);
     }
-    
+
     // Handle multer errors
     if (err.name === 'MulterError') {
         return res.status(400).json({
             message: err.message || 'File upload failed'
         });
     }
-    
+
     res.status(err.status || 500).json({
         message: err.message || 'Something went wrong!',
         error: process.env.NODE_ENV === 'development' ? err : undefined
