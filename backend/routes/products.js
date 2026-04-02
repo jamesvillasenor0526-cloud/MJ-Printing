@@ -64,11 +64,11 @@ router.get('/categories', async (req, res) => {
 // ADMIN ROUTES
 
 // @route   GET /api/products/admin/all
-// @desc    Get all products (including inactive)
+// @desc    Get all active products
 // @access  Private/Admin
 router.get('/admin/all', protect, admin, async (req, res) => {
     try {
-        const products = await Product.find({}).sort({ category: 1, name: 1 });
+        const products = await Product.find({ deletedAt: { $eq: null } }).sort({ category: 1, name: 1 });
         res.json(products);
     } catch (err) {
         res.status(500).json({ message: err.message });
