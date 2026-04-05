@@ -1300,7 +1300,8 @@
                                                     class="h-10 w-10 rounded bg-gray-100 flex-shrink-0 mr-3 border border-gray-200 overflow-hidden">
                                                     <template x-if="product.image">
                                                         <img :src="product.image.startsWith('/') ? (typeof API_URL !== 'undefined' ? API_URL.replace('/api', '') : '') + product.image : product.image"
-                                                            class="w-full h-full object-cover">
+                                                            @click="lightboxImage = (product.image.startsWith('/') ? (typeof API_URL !== 'undefined' ? API_URL.replace('/api', '') : '') + product.image : product.image)"
+                                                            class="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity">
                                                     </template>
                                                     <template x-if="!product.image">
                                                         <svg class="w-full h-full text-gray-400 p-2" fill="none"
@@ -1476,9 +1477,17 @@
                             </div>
 
                             <div>
-                                <label class="block text-sm font-medium text-gray-700">Image</label>
                                 <input type="file" @change="handleImageUpload" accept="image/*"
                                     class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-light file:text-brand hover:file:bg-brand/20">
+                                
+                                <!-- Image Preview -->
+                                <div class="mt-4" x-show="productForm.preview || productForm.image">
+                                    <p class="text-xs text-gray-500 mb-2">Image Preview:</p>
+                                    <div class="relative inline-block border rounded-lg overflow-hidden bg-gray-50">
+                                        <img :src="productForm.preview || (productForm.image && productForm.image.startsWith('/') ? (typeof API_URL !== 'undefined' ? API_URL.replace('/api', '') : '') + productForm.image : productForm.image)" 
+                                             class="h-32 w-auto object-contain">
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="flex items-center">
@@ -1535,7 +1544,8 @@
                                     :key="index">
                                     <div class="relative rounded-lg overflow-hidden bg-gray-100 aspect-square">
                                         <img :src="img.startsWith('/') ? (typeof API_URL !== 'undefined' ? API_URL.replace('/api', '') : '') + img : img"
-                                            class="w-full h-full object-cover">
+                                            @click="lightboxImage = (img.startsWith('/') ? (typeof API_URL !== 'undefined' ? API_URL.replace('/api', '') : '') + img : img)"
+                                            class="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity">
                                         <button @click.stop="removePortfolioImage(img)" type="button"
                                             class="absolute top-1 right-1 z-10 bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 cursor-pointer">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1668,7 +1678,8 @@
                     basePrice: 0,
                     description: '',
                     isActive: true,
-                    image: null
+                    image: null,
+                    preview: null
                 },
                 productImageFile: null,
 
@@ -1721,7 +1732,8 @@
                             basePrice: product.basePrice,
                             description: product.description || '',
                             isActive: product.isActive,
-                            image: product.image
+                            image: product.image,
+                            preview: null
                         };
                     } else {
                         this.productForm = {
@@ -1730,7 +1742,8 @@
                             basePrice: 0,
                             description: '',
                             isActive: true,
-                            image: null
+                            image: null,
+                            preview: null
                         };
                     }
                     this.productImageFile = null;
@@ -1741,6 +1754,7 @@
                     const file = event.target.files[0];
                     if (file) {
                         this.productImageFile = file;
+                        this.productForm.preview = URL.createObjectURL(file);
                     }
                 },
 
