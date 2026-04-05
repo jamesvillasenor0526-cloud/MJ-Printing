@@ -1479,13 +1479,13 @@
                             <div>
                                 <input type="file" @change="handleImageUpload" accept="image/*"
                                     class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-light file:text-brand hover:file:bg-brand/20">
-                                
+
                                 <!-- Image Preview -->
                                 <div class="mt-4" x-show="productForm.preview || productForm.image">
                                     <p class="text-xs text-gray-500 mb-2">Image Preview:</p>
                                     <div class="relative inline-block border rounded-lg overflow-hidden bg-gray-50">
-                                        <img :src="productForm.preview || (productForm.image && productForm.image.startsWith('/') ? (typeof API_URL !== 'undefined' ? API_URL.replace('/api', '') : '') + productForm.image : productForm.image)" 
-                                             class="h-32 w-auto object-contain">
+                                        <img :src="productForm.preview || (productForm.image && productForm.image.startsWith('/') ? (typeof API_URL !== 'undefined' ? API_URL.replace('/api', '') : '') + productForm.image : productForm.image)"
+                                            class="h-32 w-auto object-contain">
                                     </div>
                                 </div>
                             </div>
